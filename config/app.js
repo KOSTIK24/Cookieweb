@@ -9,6 +9,7 @@ const APP_CONFIG = {
   postsTable: "site_posts",
   profilesTable: "profiles",
   adminsTable: "admin_users",
+  teamTable: "team_members",
 
   maxChatMessages: 80,
   maxGameChatMessages: 50,
