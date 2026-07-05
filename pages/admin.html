@@ -152,6 +152,21 @@
         <p class="status">Načítám...</p>
       </div>
     </section>
+
+    <section id="teamPanel" class="card" style="display:none;">
+  <h2>Upravit admin team 👑</h2>
+
+  <div class="form-stack">
+    <input id="teamName" maxlength="40" placeholder="Jméno, třeba susenka 3">
+    <input id="teamRole" maxlength="40" placeholder="Role, třeba Owner">
+    <input id="teamOrder" type="number" placeholder="Pořadí, třeba 3">
+    <button class="btn primary" onclick="addTeamMember()">Přidat člena</button>
+  </div>
+
+  <div id="teamList" style="margin-top:16px;">
+    <p class="status">Načítám team...</p>
+  </div>
+</section>
   </main>
 
   <footer class="footer">© 2026 Sušenka Web</footer>
