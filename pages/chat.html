@@ -24,6 +24,7 @@
       padding: 10px 12px;
       margin-bottom: 10px;
       word-break: break-word;
+      animation: pop .18s ease;
     }
 
     .chat-message strong {
@@ -63,6 +64,11 @@
       font-weight: 800;
     }
 
+    .success {
+      color: #baffc9;
+      font-weight: 800;
+    }
+
     @media (max-width: 850px) {
       .chat-form {
         grid-template-columns: 1fr;
@@ -82,7 +88,10 @@
       <a href="../index.html">Domů</a>
       <a href="hra.html">Hra</a>
       <a href="novinky.html">Novinky</a>
-      <a href="chat.html">Chat</a>
+      <a href="chat.html" class="active">Chat</a>
+      <a href="team.html">Team</a>
+      <a href="kontakt.html">Kontakt</a>
+      <a href="faq.html">FAQ</a>
       <a href="admin.html">Admin</a>
       <a href="login.html">Login</a>
     </nav>
@@ -102,7 +111,7 @@
 
       <div class="chat-form">
         <input id="chatInput" maxlength="300" placeholder="Napiš zprávu..." autocomplete="off">
-        <button class="btn primary" onclick="sendMessage()">Poslat</button>
+        <button class="btn primary" id="sendButton" onclick="sendMessage()">Poslat</button>
       </div>
 
       <p id="chatStatus" class="status"></p>
@@ -120,6 +129,7 @@
 
     const chatMessages = document.getElementById("chatMessages");
     const chatInput = document.getElementById("chatInput");
+    const sendButton = document.getElementById("sendButton");
     const chatStatus = document.getElementById("chatStatus");
     const userInfo = document.getElementById("userInfo");
 
@@ -127,19 +137,46 @@
     let currentProfile = null;
     let chatChannel = null;
 
-    function setStatus(text, danger = false) {
+    const seenMessageIds = new Set();
+    let lastMessageId = 0;
+    let isLoadingNewMessages = false;
+
+    function setStatus(text, danger = false, success = false) {
       chatStatus.textContent = text;
-      chatStatus.className = danger ? "status danger" : "status";
+      chatStatus.className = danger ? "status danger" : success ? "status success" : "status";
+    }
+
+    function clearEmptyMessage() {
+      const empty = chatMessages.querySelector(".status");
+      if (empty) {
+        chatMessages.innerHTML = "";
+      }
     }
 
     function renderMessage(row) {
+      if (!row || !row.id) return;
+
+      const id = Number(row.id);
+
+      if (seenMessageIds.has(id)) {
+        return;
+      }
+
+      seenMessageIds.add(id);
+
+      if (id > lastMessageId) {
+        lastMessageId = id;
+      }
+
+      clearEmptyMessage();
+
       const div = document.createElement("div");
       div.className = "chat-message";
 
       div.innerHTML = `
         <small>${window.SUSENKA.formatDateCZ(row.created_at)}</small>
-        <strong>${window.SUSENKA.escapeHTML(row.username)}</strong>
-        <div>${window.SUSENKA.escapeHTML(row.message)}</div>
+        <strong>${window.SUSENKA.escapeHTML(row.username || "user")}</strong>
+        <div>${window.SUSENKA.escapeHTML(row.message || "")}</div>
       `;
 
       chatMessages.appendChild(div);
@@ -149,6 +186,8 @@
     async function initChat() {
       if (!db) {
         chatMessages.innerHTML = `<p class="status danger">Databáze není nastavená.</p>`;
+        chatInput.disabled = true;
+        sendButton.disabled = true;
         return;
       }
 
@@ -158,12 +197,23 @@
       if (!currentUser) {
         userInfo.innerHTML = `Nejsi přihlášený. <a href="login.html">Přihlas se tady.</a>`;
         chatInput.disabled = true;
+        sendButton.disabled = true;
       } else {
         userInfo.innerHTML = `Píšeš jako <b>${window.SUSENKA.escapeHTML(currentProfile?.username || currentUser.email)}</b>`;
+        chatInput.disabled = false;
+        sendButton.disabled = false;
       }
 
       await loadMessages();
       startRealtime();
+
+      setInterval(loadNewMessages, 3000);
+
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) {
+          loadNewMessages();
+        }
+      });
     }
 
     async function loadMessages() {
@@ -180,6 +230,8 @@
       }
 
       chatMessages.innerHTML = "";
+      seenMessageIds.clear();
+      lastMessageId = 0;
 
       const rows = [...data].reverse();
 
@@ -191,11 +243,42 @@
       rows.forEach(renderMessage);
     }
 
+    async function loadNewMessages() {
+      if (!db || isLoadingNewMessages) return;
+
+      isLoadingNewMessages = true;
+
+      try {
+        if (!lastMessageId) {
+          await loadMessages();
+          return;
+        }
+
+        const { data, error } = await db
+          .from(cfg.chatTable)
+          .select("id, user_id, username, message, created_at")
+          .gt("id", lastMessageId)
+          .order("id", { ascending: true })
+          .limit(50);
+
+        if (error) {
+          console.error(error);
+          return;
+        }
+
+        if (data && data.length) {
+          data.forEach(renderMessage);
+        }
+      } finally {
+        isLoadingNewMessages = false;
+      }
+    }
+
     function startRealtime() {
-      if (chatChannel) return;
+      if (!db || chatChannel) return;
 
       chatChannel = db
-        .channel("site-chat")
+        .channel("site-chat-live")
         .on(
           "postgres_changes",
           {
@@ -204,14 +287,21 @@
             table: cfg.chatTable
           },
           payload => {
-            const empty = chatMessages.querySelector(".status");
-            if (empty) chatMessages.innerHTML = "";
             renderMessage(payload.new);
+            setStatus("Chat je online.", false, true);
           }
         )
         .subscribe(status => {
           if (status === "SUBSCRIBED") {
-            setStatus("Chat je online.");
+            setStatus("Chat je online.", false, true);
+          }
+
+          if (status === "CHANNEL_ERROR") {
+            setStatus("Realtime nejede, zapnutý je záložní refresh.", true);
+          }
+
+          if (status === "TIMED_OUT") {
+            setStatus("Realtime timeout, zapnutý je záložní refresh.", true);
           }
         });
     }
@@ -227,24 +317,36 @@
         return setStatus("Zpráva je prázdná.", true);
       }
 
-      chatInput.value = "";
-
       const username = currentProfile?.username || currentUser.email?.split("@")[0] || "user";
 
-      const { error } = await db
+      chatInput.value = "";
+      chatInput.focus();
+      sendButton.disabled = true;
+      setStatus("Posílám...");
+
+      const { data, error } = await db
         .from(cfg.chatTable)
         .insert({
           user_id: currentUser.id,
           username,
           message
-        });
+        })
+        .select("id, user_id, username, message, created_at")
+        .single();
+
+      sendButton.disabled = false;
 
       if (error) {
         console.error(error);
-        return setStatus("Zpráva se neposlala.", true);
+        setStatus("Zpráva se neposlala.", true);
+        chatInput.value = message;
+        return;
       }
 
-      setStatus("Odesláno.");
+      renderMessage(data);
+      setStatus("Odesláno.", false, true);
+
+      setTimeout(loadNewMessages, 500);
     }
 
     chatInput.addEventListener("keydown", event => {
