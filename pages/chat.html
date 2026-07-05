@@ -136,6 +136,8 @@
     let currentUser = null;
     let currentProfile = null;
     let chatChannel = null;
+    let lastChatSendAt = 0;
+const CHAT_COOLDOWN_MS = 1000;
 
     const seenMessageIds = new Set();
     let lastMessageId = 0;
