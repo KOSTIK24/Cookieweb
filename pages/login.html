@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Sušenka Web | Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="../style.css">
+
+  <style>
+    .auth-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .auth-box {
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .form-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .form-stack input {
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
+      color: white;
+      border-radius: 14px;
+      padding: 12px 14px;
+      outline: none;
+    }
+
+    .status {
+      color: var(--muted);
+      margin-top: 12px;
+    }
+
+    .danger {
+      color: #ffb4b4;
+      font-weight: 800;
+    }
+
+    .success {
+      color: #baffc9;
+      font-weight: 800;
+    }
+
+    @media (max-width: 850px) {
+      .auth-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="../images/susenka-logo.png" alt="logo" class="brand-logo">
+      <span class="brand-name">Sušenka <b>Web</b></span>
+    </div>
+
+    <nav class="nav">
+      <a href="../index.html">Domů</a>
+      <a href="hra.html">Hra</a>
+      <a href="novinky.html">Novinky</a>
+      <a href="chat.html">Chat</a>
+      <a href="admin.html">Admin</a>
+      <a href="login.html">Login</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="card hero animate-pop">
+      <h1>Login / Register 🔐</h1>
+      <p>Přihlašování přes Supabase Auth. Firebase se nepoužívá.</p>
+      <p id="currentUserInfo" class="status">Kontroluju přihlášení...</p>
+    </section>
+
+    <section class="card">
+      <div class="auth-grid">
+        <div class="auth-box">
+          <h2>Přihlášení</h2>
+
+          <div class="form-stack">
+            <input id="loginEmail" type="email" placeholder="Email">
+            <input id="loginPassword" type="password" placeholder="Heslo">
+            <button class="btn primary" onclick="login()">Přihlásit</button>
+          </div>
+        </div>
+
+        <div class="auth-box">
+          <h2>Registrace</h2>
+
+          <div class="form-stack">
+            <input id="registerUsername" maxlength="24" placeholder="Jméno">
+            <input id="registerEmail" type="email" placeholder="Email">
+            <input id="registerPassword" type="password" placeholder="Heslo">
+            <button class="btn primary" onclick="register()">Registrovat</button>
+          </div>
+        </div>
+      </div>
+
+      <p id="authStatus" class="status"></p>
+
+      <div class="controls">
+        <button class="btn" onclick="logout()">Odhlásit</button>
+        <a class="btn" href="chat.html">Jít na chat</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">© 2026 Sušenka Web</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../config/app.js"></script>
+
+  <script>
+    const db = window.SUSENKA.supabase;
+    const authStatus = document.getElementById("authStatus");
+    const currentUserInfo = document.getElementById("currentUserInfo");
+
+    function setStatus(text, danger = false) {
+      authStatus.textContent = text;
+      authStatus.className = danger ? "status danger" : "status success";
+    }
+
+    async function refreshUserInfo() {
+      if (!db) {
+        currentUserInfo.textContent = "Supabase není nastavený.";
+        currentUserInfo.className = "status danger";
+        return;
+      }
+
+      const user = await window.SUSENKA.getCurrentUser();
+
+      if (!user) {
+        currentUserInfo.textContent = "Nejsi přihlášený.";
+        currentUserInfo.className = "status";
+        return;
+      }
+
+      const profile = await window.SUSENKA.getCurrentProfile();
+      const isAdmin = await window.SUSENKA.isCurrentUserAdmin();
+
+      currentUserInfo.innerHTML = `
+        Přihlášen jako <b>${window.SUSENKA.escapeHTML(profile?.username || user.email)}</b>
+        ${isAdmin ? " | 👑 Admin" : ""}
+      `;
+      currentUserInfo.className = "status success";
+    }
+
+    async function register() {
+      if (!db) return setStatus("Supabase není nastavený.", true);
+
+      const username = document.getElementById("registerUsername").value.trim().slice(0, 24);
+      const email = document.getElementById("registerEmail").value.trim();
+      const password = document.getElementById("registerPassword").value;
+
+      if (!username || !email || !password) {
+        return setStatus("Vyplň jméno, email a heslo.", true);
+      }
+
+      const { error } = await db.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            username
+          }
+        }
+      });
+
+      if (error) {
+        return setStatus(error.message, true);
+      }
+
+      setStatus("Registrace hotová. Pokud máš zapnuté potvrzení emailu, potvrď email.");
+      refreshUserInfo();
+    }
+
+    async function login() {
+      if (!db) return setStatus("Supabase není nastavený.", true);
+
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
+
+      if (!email || !password) {
+        return setStatus("Vyplň email a heslo.", true);
+      }
+
+      const { error } = await db.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        return setStatus(error.message, true);
+      }
+
+      setStatus("Přihlášeno.");
+      refreshUserInfo();
+    }
+
+    async function logout() {
+      await window.SUSENKA.logoutUser();
+    }
+
+    refreshUserInfo();
+  </script>
+</body>
+</html>
