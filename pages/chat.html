@@ -318,6 +318,14 @@ const CHAT_COOLDOWN_MS = 1000;
       if (!message) {
         return setStatus("Zpráva je prázdná.", true);
       }
+      const now = Date.now();
+const cooldownLeft = CHAT_COOLDOWN_MS - (now - lastChatSendAt);
+
+if (cooldownLeft > 0) {
+  return setStatus(`Počkej ještě ${(cooldownLeft / 1000).toFixed(1)}s.`, true);
+}
+
+lastChatSendAt = now;
 
       const username = currentProfile?.username || currentUser.email?.split("@")[0] || "user";
 
