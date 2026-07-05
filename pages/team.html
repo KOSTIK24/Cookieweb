@@ -41,9 +41,15 @@
     .member-card p {
       color: var(--muted);
       margin: 0;
+      font-weight: 800;
     }
 
     .discord-box {
+      text-align: center;
+    }
+
+    .status {
+      color: var(--muted);
       text-align: center;
     }
 
@@ -88,30 +94,8 @@
     <section class="card">
       <h2>Admin Team</h2>
 
-      <div class="team-grid">
-        <article class="member-card">
-          <img src="../images/susenka.png" alt="susa" class="member-avatar">
-          <h2>susa</h2>
-          <p>Admin</p>
-        </article>
-
-        <article class="member-card">
-          <img src="../images/susenka.png" alt="susenka 6" class="member-avatar">
-          <h2>susenka 6</h2>
-          <p>Admin</p>
-        </article>
-
-        <article class="member-card">
-          <img src="../images/susenka.png" alt="susenka 3" class="member-avatar">
-          <h2>susenka 3</h2>
-          <p>Admin</p>
-        </article>
-
-        <article class="member-card">
-          <img src="../images/susenka.png" alt="susenka 4" class="member-avatar">
-          <h2>susenka 4</h2>
-          <p>Admin</p>
-        </article>
+      <div id="teamGrid" class="team-grid">
+        <p class="status">Načítám team...</p>
       </div>
     </section>
 
@@ -128,5 +112,61 @@
   </main>
 
   <footer class="footer">© 2026 Sušenka Web</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../config/app.js"></script>
+
+  <script>
+    const db = window.SUSENKA.supabase;
+    const cfg = window.SUSENKA.config;
+    const teamGrid = document.getElementById("teamGrid");
+
+    function fallbackTeam() {
+      return [
+        { name: "susa", role: "Admin" },
+        { name: "susenka 6", role: "Admin" },
+        { name: "susenka 3", role: "Owner" },
+        { name: "susenka 4", role: "Admin" }
+      ];
+    }
+
+    function renderTeam(rows) {
+      teamGrid.innerHTML = rows.map(member => `
+        <article class="member-card">
+          <img src="../images/susenka.png" alt="${window.SUSENKA.escapeHTML(member.name)}" class="member-avatar">
+          <h2>${window.SUSENKA.escapeHTML(member.name)}</h2>
+          <p>${window.SUSENKA.escapeHTML(member.role)}</p>
+        </article>
+      `).join("");
+    }
+
+    async function loadTeam() {
+      if (!db) {
+        renderTeam(fallbackTeam());
+        return;
+      }
+
+      const { data, error } = await db
+        .from(cfg.teamTable)
+        .select("id, name, role, sort_order")
+        .order("sort_order", { ascending: true })
+        .order("id", { ascending: true });
+
+      if (error) {
+        console.error(error);
+        renderTeam(fallbackTeam());
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        renderTeam(fallbackTeam());
+        return;
+      }
+
+      renderTeam(data);
+    }
+
+    loadTeam();
+  </script>
 </body>
 </html>
