@@ -136,12 +136,13 @@
     let currentUser = null;
     let currentProfile = null;
     let chatChannel = null;
-    let lastChatSendAt = 0;
-const CHAT_COOLDOWN_MS = 1000;
 
     const seenMessageIds = new Set();
     let lastMessageId = 0;
     let isLoadingNewMessages = false;
+
+    let lastChatSendAt = 0;
+    const CHAT_COOLDOWN_MS = 1000;
 
     function setStatus(text, danger = false, success = false) {
       chatStatus.textContent = text;
@@ -150,37 +151,24 @@ const CHAT_COOLDOWN_MS = 1000;
 
     function clearEmptyMessage() {
       const empty = chatMessages.querySelector(".status");
-      if (empty) {
-        chatMessages.innerHTML = "";
-      }
+      if (empty) chatMessages.innerHTML = "";
     }
 
     function renderMessage(row) {
       if (!row || !row.id) return;
-
       const id = Number(row.id);
-
-      if (seenMessageIds.has(id)) {
-        return;
-      }
-
+      if (seenMessageIds.has(id)) return;
       seenMessageIds.add(id);
-
-      if (id > lastMessageId) {
-        lastMessageId = id;
-      }
-
+      if (id > lastMessageId) lastMessageId = id;
       clearEmptyMessage();
 
       const div = document.createElement("div");
       div.className = "chat-message";
-
       div.innerHTML = `
         <small>${window.SUSENKA.formatDateCZ(row.created_at)}</small>
         <strong>${window.SUSENKA.escapeHTML(row.username || "user")}</strong>
         <div>${window.SUSENKA.escapeHTML(row.message || "")}</div>
       `;
-
       chatMessages.appendChild(div);
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
@@ -208,13 +196,10 @@ const CHAT_COOLDOWN_MS = 1000;
 
       await loadMessages();
       startRealtime();
-
       setInterval(loadNewMessages, 3000);
 
       document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) {
-          loadNewMessages();
-        }
+        if (!document.hidden) loadNewMessages();
       });
     }
 
@@ -236,7 +221,6 @@ const CHAT_COOLDOWN_MS = 1000;
       lastMessageId = 0;
 
       const rows = [...data].reverse();
-
       if (rows.length === 0) {
         chatMessages.innerHTML = `<p class="status">Zatím tu nic není.</p>`;
         return;
@@ -247,7 +231,6 @@ const CHAT_COOLDOWN_MS = 1000;
 
     async function loadNewMessages() {
       if (!db || isLoadingNewMessages) return;
-
       isLoadingNewMessages = true;
 
       try {
@@ -268,9 +251,7 @@ const CHAT_COOLDOWN_MS = 1000;
           return;
         }
 
-        if (data && data.length) {
-          data.forEach(renderMessage);
-        }
+        if (data && data.length) data.forEach(renderMessage);
       } finally {
         isLoadingNewMessages = false;
       }
@@ -283,50 +264,32 @@ const CHAT_COOLDOWN_MS = 1000;
         .channel("site-chat-live")
         .on(
           "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: cfg.chatTable
-          },
+          { event: "INSERT", schema: "public", table: cfg.chatTable },
           payload => {
             renderMessage(payload.new);
             setStatus("Chat je online.", false, true);
           }
         )
         .subscribe(status => {
-          if (status === "SUBSCRIBED") {
-            setStatus("Chat je online.", false, true);
-          }
-
-          if (status === "CHANNEL_ERROR") {
-            setStatus("Realtime nejede, zapnutý je záložní refresh.", true);
-          }
-
-          if (status === "TIMED_OUT") {
-            setStatus("Realtime timeout, zapnutý je záložní refresh.", true);
-          }
+          if (status === "SUBSCRIBED") setStatus("Chat je online.", false, true);
+          if (status === "CHANNEL_ERROR") setStatus("Realtime nejede, zapnutý je záložní refresh.", true);
+          if (status === "TIMED_OUT") setStatus("Realtime timeout, zapnutý je záložní refresh.", true);
         });
     }
 
     async function sendMessage() {
-      if (!currentUser) {
-        return setStatus("Nejdřív se přihlas.", true);
-      }
+      if (!currentUser) return setStatus("Nejdřív se přihlas.", true);
 
       const message = chatInput.value.trim().slice(0, cfg.maxChatLength);
+      if (!message) return setStatus("Zpráva je prázdná.", true);
 
-      if (!message) {
-        return setStatus("Zpráva je prázdná.", true);
-      }
       const now = Date.now();
-const cooldownLeft = CHAT_COOLDOWN_MS - (now - lastChatSendAt);
+      const cooldownLeft = CHAT_COOLDOWN_MS - (now - lastChatSendAt);
+      if (cooldownLeft > 0) {
+        return setStatus(`Počkej ještě ${(cooldownLeft / 1000).toFixed(1)}s.`, true);
+      }
 
-if (cooldownLeft > 0) {
-  return setStatus(`Počkej ještě ${(cooldownLeft / 1000).toFixed(1)}s.`, true);
-}
-
-lastChatSendAt = now;
-
+      lastChatSendAt = now;
       const username = currentProfile?.username || currentUser.email?.split("@")[0] || "user";
 
       chatInput.value = "";
@@ -336,34 +299,27 @@ lastChatSendAt = now;
 
       const { data, error } = await db
         .from(cfg.chatTable)
-        .insert({
-          user_id: currentUser.id,
-          username,
-          message
-        })
+        .insert({ user_id: currentUser.id, username, message })
         .select("id, user_id, username, message, created_at")
         .single();
 
       sendButton.disabled = false;
 
       if (error) {
-  console.error(error);
-  lastChatSendAt = 0;
-  setStatus("Zpráva se neposlala.", true);
-  chatInput.value = message;
-  return;
-}
+        console.error(error);
+        lastChatSendAt = 0;
+        setStatus("Zpráva se neposlala.", true);
+        chatInput.value = message;
+        return;
+      }
 
       renderMessage(data);
       setStatus("Odesláno.", false, true);
-
       setTimeout(loadNewMessages, 500);
     }
 
     chatInput.addEventListener("keydown", event => {
-      if (event.key === "Enter") {
-        sendMessage();
-      }
+      if (event.key === "Enter") sendMessage();
     });
 
     initChat();
