@@ -10,6 +10,8 @@ const APP_CONFIG = {
   profilesTable: "profiles",
   adminsTable: "admin_users",
   teamTable: "team_members",
+  faqTable: "faq_items",
+  contactsTable: "contact_messages",
 
   maxChatMessages: 80,
   maxGameChatMessages: 50,
@@ -77,7 +79,7 @@ async function getCurrentProfile() {
 
   const { data, error } = await supabaseClient
     .from(APP_CONFIG.profilesTable)
-    .select("id, username, created_at")
+    .select("id, username, role, created_at")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -87,7 +89,8 @@ async function getCurrentProfile() {
 
   return data || {
     id: user.id,
-    username: user.email?.split("@")[0] || "user"
+    username: user.email?.split("@")[0] || "user",
+    role: "member"
   };
 }
 
