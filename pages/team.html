@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Sušenka Web | Team</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="../style.css">
+
+  <style>
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .member-card {
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding: 18px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .member-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      object-fit: cover;
+      margin-bottom: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.35);
+    }
+
+    .member-card h2 {
+      margin: 6px 0;
+      font-size: 20px;
+    }
+
+    .member-card p {
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .discord-box {
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .team-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .team-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="../images/susenka.png" alt="logo" class="brand-logo">
+      <span class="brand-name">Sušenka <b>Web</b></span>
+    </div>
+
+    <nav class="nav">
+      <a href="../index.html">Domů</a>
+      <a href="hra.html">Hra</a>
+      <a href="novinky.html">Novinky</a>
+      <a href="chat.html">Chat</a>
+      <a href="team.html" class="active">Team</a>
+      <a href="admin.html">Admin</a>
+      <a href="login.html">Login</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="card hero animate-pop">
+      <h1>Sušenka Admin Team 👑</h1>
+      <p>Oficiální admin team Sušenka serveru.</p>
+    </section>
+
+    <section class="card">
+      <h2>Admin Team</h2>
+
+      <div class="team-grid">
+        <article class="member-card">
+          <img src="../images/susenka.png" alt="susa" class="member-avatar">
+          <h2>susa</h2>
+          <p>Admin</p>
+        </article>
+
+        <article class="member-card">
+          <img src="../images/susenka.png" alt="susenka 6" class="member-avatar">
+          <h2>susenka 6</h2>
+          <p>Admin</p>
+        </article>
+
+        <article class="member-card">
+          <img src="../images/susenka.png" alt="susenka 3" class="member-avatar">
+          <h2>susenka 3</h2>
+          <p>Admin</p>
+        </article>
+
+        <article class="member-card">
+          <img src="../images/susenka.png" alt="susenka 4" class="member-avatar">
+          <h2>susenka 4</h2>
+          <p>Admin</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="card discord-box">
+      <h2>Discord server 💬</h2>
+      <p class="hint">Připoj se na oficiální Sušenka Discord server.</p>
+
+      <div class="controls">
+        <a class="btn primary" href="https://discord.gg/Sg6RhsrjJZ" target="_blank" rel="noopener noreferrer">
+          Připojit se na Discord
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">© 2026 Sušenka Web</footer>
+</body>
+</html>
