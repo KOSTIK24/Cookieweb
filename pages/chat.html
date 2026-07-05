@@ -347,11 +347,12 @@ lastChatSendAt = now;
       sendButton.disabled = false;
 
       if (error) {
-        console.error(error);
-        setStatus("Zpráva se neposlala.", true);
-        chatInput.value = message;
-        return;
-      }
+  console.error(error);
+  lastChatSendAt = 0;
+  setStatus("Zpráva se neposlala.", true);
+  chatInput.value = message;
+  return;
+}
 
       renderMessage(data);
       setStatus("Odesláno.", false, true);
