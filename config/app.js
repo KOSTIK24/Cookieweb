@@ -60,7 +60,13 @@ function formatDateCZ(value) {
 async function getCurrentUser() {
   if (!supabaseClient) return null;
 
-  const { data } = await supabaseClient.auth.getUser();
+  const { data, error } = await supabaseClient.auth.getUser();
+
+  if (error) {
+    console.warn("User check error:", error);
+    return null;
+  }
+
   return data.user || null;
 }
 
@@ -69,11 +75,15 @@ async function getCurrentProfile() {
 
   if (!user) return null;
 
-  const { data } = await supabaseClient
+  const { data, error } = await supabaseClient
     .from(APP_CONFIG.profilesTable)
     .select("id, username, created_at")
     .eq("id", user.id)
     .maybeSingle();
+
+  if (error) {
+    console.warn("Profile check error:", error);
+  }
 
   return data || {
     id: user.id,
@@ -102,15 +112,20 @@ async function isCurrentUserAdmin() {
 
 async function logoutUser() {
   if (!supabaseClient) return;
+
   await supabaseClient.auth.signOut();
-  window.location.href = "login.html";
+
+  const isInsidePagesFolder = window.location.pathname.includes("/pages/");
+  window.location.href = isInsidePagesFolder ? "login.html" : "pages/login.html";
 }
 
 window.SUSENKA = {
   supabase: supabaseClient,
   config: APP_CONFIG,
+
   escapeHTML,
   formatDateCZ,
+
   getCurrentUser,
   getCurrentProfile,
   isCurrentUserAdmin,
