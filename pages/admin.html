@@ -36,7 +36,8 @@
       resize: vertical;
     }
 
-    .panel-box {
+    .panel-box,
+    .admin-item {
       background: rgba(0,0,0,.18);
       border: 1px solid rgba(255,255,255,.08);
       border-radius: 16px;
@@ -44,10 +45,6 @@
     }
 
     .admin-item {
-      background: rgba(255,255,255,.07);
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 14px;
-      padding: 12px;
       margin-bottom: 10px;
     }
 
@@ -70,6 +67,24 @@
       font-weight: 800;
     }
 
+    .admin-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 14px;
+    }
+
+    .mini-badge {
+      display: inline-block;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.1);
+      font-size: 12px;
+      font-weight: 900;
+      margin-left: 6px;
+    }
+
     @media (max-width: 850px) {
       .admin-grid {
         grid-template-columns: 1fr;
@@ -90,6 +105,9 @@
       <a href="hra.html">Hra</a>
       <a href="novinky.html">Novinky</a>
       <a href="chat.html">Chat</a>
+      <a href="team.html">Team</a>
+      <a href="kontakt.html">Kontakt</a>
+      <a href="faq.html">FAQ</a>
       <a href="admin.html" class="active">Admin</a>
       <a href="login.html">Login</a>
     </nav>
@@ -98,8 +116,17 @@
   <main class="container">
     <section class="card hero animate-pop">
       <h1>Admin Panel 👑</h1>
-      <p>Tady může admin přidávat news, eventy a kontrolovat chat.</p>
+      <p>Máš kontrolu nad news, eventy, teamem, uživateli, FAQ, kontaktem a chatem.</p>
       <p id="adminStatus" class="status">Kontroluju oprávnění...</p>
+
+      <div id="adminTabs" class="admin-tabs" style="display:none;">
+        <a class="btn" href="#postsPanel">Příspěvky</a>
+        <a class="btn" href="#usersPanel">Uživatelé</a>
+        <a class="btn" href="#teamPanel">Team</a>
+        <a class="btn" href="#faqPanel">FAQ</a>
+        <a class="btn" href="#contactsPanel">Kontakt</a>
+        <a class="btn" href="#chatPanel">Chat</a>
+      </div>
     </section>
 
     <section id="adminContent" class="card" style="display:none;">
@@ -114,9 +141,7 @@
             </select>
 
             <input id="postTitle" maxlength="80" placeholder="Název">
-
             <textarea id="postBody" maxlength="1000" placeholder="Text..."></textarea>
-
             <input id="postDate" type="datetime-local">
 
             <button class="btn primary" onclick="createPost()">Publikovat</button>
@@ -127,46 +152,81 @@
 
         <div class="panel-box">
           <h2>Admin info</h2>
-          <p class="status">
-            News a eventy se zobrazují na stránce <b>novinky.html</b>.
-          </p>
+          <p class="status">Tady měníš věci, které se zobrazují na webu.</p>
 
           <div class="controls">
             <button class="btn" onclick="logoutAdmin()">Odhlásit</button>
-            <a class="btn" href="novinky.html">Otevřít novinky</a>
+            <a class="btn" href="novinky.html">Novinky</a>
+            <a class="btn" href="team.html">Team</a>
           </div>
         </div>
       </div>
     </section>
 
+    <section id="usersPanel" class="card" style="display:none;">
+      <h2>Panel uživatelů 👥</h2>
+      <p class="hint">
+        Role je text, který můžeš měnit. Admin přístup je zvlášť — ten rozhoduje, kdo může do admin panelu.
+      </p>
+
+      <div id="usersList">
+        <p class="status">Načítám uživatele...</p>
+      </div>
+    </section>
+
+    <section id="teamPanel" class="card" style="display:none;">
+      <h2>Upravit admin team 👑</h2>
+
+      <div class="form-stack">
+        <input id="teamName" maxlength="40" placeholder="Jméno, třeba susenka 3">
+        <input id="teamRole" maxlength="40" placeholder="Role, třeba Owner">
+        <input id="teamOrder" type="number" placeholder="Pořadí, třeba 3">
+        <button class="btn primary" onclick="addTeamMember()">Přidat člena</button>
+      </div>
+
+      <div id="teamList" style="margin-top:16px;">
+        <p class="status">Načítám team...</p>
+      </div>
+    </section>
+
+    <section id="faqPanel" class="card" style="display:none;">
+      <h2>Upravit FAQ ❓</h2>
+
+      <div class="form-stack">
+        <input id="faqQuestion" maxlength="120" placeholder="Otázka">
+        <textarea id="faqAnswer" maxlength="1000" placeholder="Odpověď"></textarea>
+        <input id="faqOrder" type="number" placeholder="Pořadí">
+        <button class="btn primary" onclick="addFaqItem()">Přidat FAQ</button>
+      </div>
+
+      <div id="faqList" style="margin-top:16px;">
+        <p class="status">Načítám FAQ...</p>
+      </div>
+    </section>
+
+    <section id="contactsPanel" class="card" style="display:none;">
+      <h2>Kontaktní zprávy 📩</h2>
+
+      <div id="contactsList">
+        <p class="status">Načítám zprávy...</p>
+      </div>
+    </section>
+
     <section id="postsPanel" class="card" style="display:none;">
-      <h2>Publikované příspěvky</h2>
+      <h2>Publikované příspěvky 📢</h2>
+
       <div id="postsList">
         <p class="status">Načítám...</p>
       </div>
     </section>
 
     <section id="chatPanel" class="card" style="display:none;">
-      <h2>Poslední chat zprávy</h2>
+      <h2>Poslední chat zprávy 💬</h2>
+
       <div id="chatList">
         <p class="status">Načítám...</p>
       </div>
     </section>
-
-    <section id="teamPanel" class="card" style="display:none;">
-  <h2>Upravit admin team 👑</h2>
-
-  <div class="form-stack">
-    <input id="teamName" maxlength="40" placeholder="Jméno, třeba susenka 3">
-    <input id="teamRole" maxlength="40" placeholder="Role, třeba Owner">
-    <input id="teamOrder" type="number" placeholder="Pořadí, třeba 3">
-    <button class="btn primary" onclick="addTeamMember()">Přidat člena</button>
-  </div>
-
-  <div id="teamList" style="margin-top:16px;">
-    <p class="status">Načítám team...</p>
-  </div>
-</section>
   </main>
 
   <footer class="footer">© 2026 Sušenka Web</footer>
@@ -179,10 +239,19 @@
     const cfg = window.SUSENKA.config;
 
     const adminStatus = document.getElementById("adminStatus");
+    const adminTabs = document.getElementById("adminTabs");
+
     const adminContent = document.getElementById("adminContent");
+    const usersPanel = document.getElementById("usersPanel");
+    const teamPanel = document.getElementById("teamPanel");
+    const faqPanel = document.getElementById("faqPanel");
+    const contactsPanel = document.getElementById("contactsPanel");
     const postsPanel = document.getElementById("postsPanel");
     const chatPanel = document.getElementById("chatPanel");
+
     const postStatus = document.getElementById("postStatus");
+
+    let currentUser = null;
 
     function setAdminStatus(text, danger = false, success = false) {
       adminStatus.textContent = text;
@@ -199,9 +268,9 @@
         return setAdminStatus("Databáze není nastavená.", true);
       }
 
-      const user = await window.SUSENKA.getCurrentUser();
+      currentUser = await window.SUSENKA.getCurrentUser();
 
-      if (!user) {
+      if (!currentUser) {
         setAdminStatus("Nejsi přihlášený. Přihlas se přes login.html.", true);
         return;
       }
@@ -215,10 +284,19 @@
 
       setAdminStatus("Admin přístup povolen.", false, true);
 
+      adminTabs.style.display = "flex";
       adminContent.style.display = "block";
+      usersPanel.style.display = "block";
+      teamPanel.style.display = "block";
+      faqPanel.style.display = "block";
+      contactsPanel.style.display = "block";
       postsPanel.style.display = "block";
       chatPanel.style.display = "block";
 
+      loadUsers();
+      loadTeamAdmin();
+      loadFaqAdmin();
+      loadContacts();
       loadPosts();
       loadChat();
     }
@@ -290,7 +368,7 @@
           <h3>${window.SUSENKA.escapeHTML(post.title)}</h3>
           <p>${window.SUSENKA.escapeHTML(post.body)}</p>
           ${post.starts_at ? `<p><b>Event čas:</b> ${window.SUSENKA.formatDateCZ(post.starts_at)}</p>` : ""}
-          <button class="btn" onclick="deletePost(${post.id})">Smazat</button>
+          <button class="btn danger" onclick="deletePost(${post.id})">Smazat</button>
         </div>
       `).join("");
     }
@@ -337,7 +415,7 @@
           <small>${window.SUSENKA.formatDateCZ(msg.created_at)}</small>
           <h3>${window.SUSENKA.escapeHTML(msg.username)}</h3>
           <p>${window.SUSENKA.escapeHTML(msg.message)}</p>
-          <button class="btn" onclick="deleteChatMessage(${msg.id})">Smazat zprávu</button>
+          <button class="btn danger" onclick="deleteChatMessage(${msg.id})">Smazat zprávu</button>
         </div>
       `).join("");
     }
@@ -357,6 +435,427 @@
       }
 
       loadChat();
+    }
+
+    async function loadUsers() {
+      const list = document.getElementById("usersList");
+
+      const { data: profiles, error: profilesError } = await db
+        .from(cfg.profilesTable)
+        .select("id, username, role, created_at")
+        .order("created_at", { ascending: false });
+
+      const { data: admins, error: adminsError } = await db
+        .from(cfg.adminsTable)
+        .select("user_id, added_at");
+
+      if (profilesError || adminsError) {
+        list.innerHTML = `<p class="status danger">Uživatelé se nepodařili načíst.</p>`;
+        console.error(profilesError || adminsError);
+        return;
+      }
+
+      const adminSet = new Set((admins || []).map(item => item.user_id));
+
+      if (!profiles.length) {
+        list.innerHTML = `<p class="status">Zatím žádní uživatelé.</p>`;
+        return;
+      }
+
+      list.innerHTML = profiles.map(profile => {
+        const isAdmin = adminSet.has(profile.id);
+
+        return `
+          <div class="admin-item">
+            <small>${window.SUSENKA.formatDateCZ(profile.created_at)}</small>
+            <h3>
+              ${window.SUSENKA.escapeHTML(profile.username || "user")}
+              ${isAdmin ? `<span class="mini-badge">ADMIN</span>` : ""}
+            </h3>
+
+            <p class="hint">User ID: ${window.SUSENKA.escapeHTML(profile.id)}</p>
+
+            <div class="form-stack">
+              <input id="user-name-${profile.id}" value="${window.SUSENKA.escapeHTML(profile.username || "")}" maxlength="24">
+              <input id="user-role-${profile.id}" value="${window.SUSENKA.escapeHTML(profile.role || "member")}" maxlength="40">
+            </div>
+
+            <div class="controls">
+              <button class="btn primary" onclick="updateUserProfile('${profile.id}')">Uložit profil</button>
+              ${
+                isAdmin
+                  ? `<button class="btn danger" onclick="toggleAdmin('${profile.id}', false)">Odebrat admina</button>`
+                  : `<button class="btn" onclick="toggleAdmin('${profile.id}', true)">Dát admina</button>`
+              }
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function updateUserProfile(userId) {
+      const username = document.getElementById(`user-name-${userId}`).value.trim().slice(0, 24);
+      const role = document.getElementById(`user-role-${userId}`).value.trim().slice(0, 40) || "member";
+
+      if (!username) {
+        alert("Jméno nesmí být prázdné.");
+        return;
+      }
+
+      const { error } = await db
+        .from(cfg.profilesTable)
+        .update({
+          username,
+          role
+        })
+        .eq("id", userId);
+
+      if (error) {
+        console.error(error);
+        alert("Profil se nepodařilo uložit.");
+        return;
+      }
+
+      loadUsers();
+    }
+
+    async function toggleAdmin(userId, shouldBeAdmin) {
+      if (!shouldBeAdmin && currentUser && currentUser.id === userId) {
+        if (!confirm("Opravdu chceš odebrat admina sám sobě?")) return;
+      }
+
+      if (shouldBeAdmin) {
+        const { error } = await db
+          .from(cfg.adminsTable)
+          .insert({
+            user_id: userId
+          });
+
+        if (error) {
+          console.error(error);
+          alert("Admin se nepodařil přidat.");
+          return;
+        }
+      } else {
+        const { error } = await db
+          .from(cfg.adminsTable)
+          .delete()
+          .eq("user_id", userId);
+
+        if (error) {
+          console.error(error);
+          alert("Admin se nepodařil odebrat.");
+          return;
+        }
+      }
+
+      loadUsers();
+    }
+
+    async function loadTeamAdmin() {
+      const list = document.getElementById("teamList");
+
+      const { data, error } = await db
+        .from(cfg.teamTable)
+        .select("id, name, role, sort_order")
+        .order("sort_order", { ascending: true })
+        .order("id", { ascending: true });
+
+      if (error) {
+        list.innerHTML = `<p class="status danger">Team se nepodařilo načíst.</p>`;
+        console.error(error);
+        return;
+      }
+
+      if (!data.length) {
+        list.innerHTML = `<p class="status">Team je prázdný.</p>`;
+        return;
+      }
+
+      list.innerHTML = data.map(member => `
+        <div class="admin-item">
+          <small>ID: ${member.id} | Pořadí: ${member.sort_order}</small>
+
+          <div class="form-stack">
+            <input id="team-name-${member.id}" value="${window.SUSENKA.escapeHTML(member.name)}" maxlength="40">
+            <input id="team-role-${member.id}" value="${window.SUSENKA.escapeHTML(member.role)}" maxlength="40">
+            <input id="team-order-${member.id}" type="number" value="${Number(member.sort_order) || 0}">
+          </div>
+
+          <div class="controls">
+            <button class="btn primary" onclick="updateTeamMember(${member.id})">Uložit změny</button>
+            <button class="btn danger" onclick="deleteTeamMember(${member.id})">Smazat</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function addTeamMember() {
+      const name = document.getElementById("teamName").value.trim();
+      const role = document.getElementById("teamRole").value.trim();
+      const sortOrder = Number(document.getElementById("teamOrder").value) || 0;
+
+      if (!name || !role) {
+        alert("Vyplň jméno a roli.");
+        return;
+      }
+
+      const { error } = await db
+        .from(cfg.teamTable)
+        .insert({
+          name,
+          role,
+          sort_order: sortOrder
+        });
+
+      if (error) {
+        console.error(error);
+        alert("Člen se nepodařil přidat.");
+        return;
+      }
+
+      document.getElementById("teamName").value = "";
+      document.getElementById("teamRole").value = "";
+      document.getElementById("teamOrder").value = "";
+
+      loadTeamAdmin();
+    }
+
+    async function updateTeamMember(id) {
+      const name = document.getElementById(`team-name-${id}`).value.trim();
+      const role = document.getElementById(`team-role-${id}`).value.trim();
+      const sortOrder = Number(document.getElementById(`team-order-${id}`).value) || 0;
+
+      if (!name || !role) {
+        alert("Jméno a role nesmí být prázdné.");
+        return;
+      }
+
+      const { error } = await db
+        .from(cfg.teamTable)
+        .update({
+          name,
+          role,
+          sort_order: sortOrder
+        })
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        alert("Změna se neuložila.");
+        return;
+      }
+
+      loadTeamAdmin();
+    }
+
+    async function deleteTeamMember(id) {
+      if (!confirm("Smazat člena teamu?")) return;
+
+      const { error } = await db
+        .from(cfg.teamTable)
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        alert("Člen se nepodařil smazat.");
+        return;
+      }
+
+      loadTeamAdmin();
+    }
+
+    async function loadFaqAdmin() {
+      const list = document.getElementById("faqList");
+
+      const { data, error } = await db
+        .from(cfg.faqTable)
+        .select("id, question, answer, sort_order, is_visible")
+        .order("sort_order", { ascending: true })
+        .order("id", { ascending: true });
+
+      if (error) {
+        list.innerHTML = `<p class="status danger">FAQ se nepodařilo načíst.</p>`;
+        console.error(error);
+        return;
+      }
+
+      if (!data.length) {
+        list.innerHTML = `<p class="status">FAQ je prázdné.</p>`;
+        return;
+      }
+
+      list.innerHTML = data.map(item => `
+        <div class="admin-item">
+          <small>ID: ${item.id} | Viditelné: ${item.is_visible ? "ano" : "ne"}</small>
+
+          <div class="form-stack">
+            <input id="faq-question-${item.id}" value="${window.SUSENKA.escapeHTML(item.question)}" maxlength="120">
+            <textarea id="faq-answer-${item.id}" maxlength="1000">${window.SUSENKA.escapeHTML(item.answer)}</textarea>
+            <input id="faq-order-${item.id}" type="number" value="${Number(item.sort_order) || 0}">
+            <select id="faq-visible-${item.id}">
+              <option value="true" ${item.is_visible ? "selected" : ""}>Viditelné</option>
+              <option value="false" ${!item.is_visible ? "selected" : ""}>Skryté</option>
+            </select>
+          </div>
+
+          <div class="controls">
+            <button class="btn primary" onclick="updateFaqItem(${item.id})">Uložit FAQ</button>
+            <button class="btn danger" onclick="deleteFaqItem(${item.id})">Smazat FAQ</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function addFaqItem() {
+      const question = document.getElementById("faqQuestion").value.trim();
+      const answer = document.getElementById("faqAnswer").value.trim();
+      const sortOrder = Number(document.getElementById("faqOrder").value) || 0;
+
+      if (!question || !answer) {
+        alert("Vyplň otázku a odpověď.");
+        return;
+      }
+
+      const { error } = await db
+        .from(cfg.faqTable)
+        .insert({
+          question,
+          answer,
+          sort_order: sortOrder,
+          is_visible: true
+        });
+
+      if (error) {
+        console.error(error);
+        alert("FAQ se nepodařilo přidat.");
+        return;
+      }
+
+      document.getElementById("faqQuestion").value = "";
+      document.getElementById("faqAnswer").value = "";
+      document.getElementById("faqOrder").value = "";
+
+      loadFaqAdmin();
+    }
+
+    async function updateFaqItem(id) {
+      const question = document.getElementById(`faq-question-${id}`).value.trim();
+      const answer = document.getElementById(`faq-answer-${id}`).value.trim();
+      const sortOrder = Number(document.getElementById(`faq-order-${id}`).value) || 0;
+      const isVisible = document.getElementById(`faq-visible-${id}`).value === "true";
+
+      if (!question || !answer) {
+        alert("Otázka a odpověď nesmí být prázdné.");
+        return;
+      }
+
+      const { error } = await db
+        .from(cfg.faqTable)
+        .update({
+          question,
+          answer,
+          sort_order: sortOrder,
+          is_visible: isVisible
+        })
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        alert("FAQ se neuložilo.");
+        return;
+      }
+
+      loadFaqAdmin();
+    }
+
+    async function deleteFaqItem(id) {
+      if (!confirm("Smazat FAQ?")) return;
+
+      const { error } = await db
+        .from(cfg.faqTable)
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        alert("FAQ se nepodařilo smazat.");
+        return;
+      }
+
+      loadFaqAdmin();
+    }
+
+    async function loadContacts() {
+      const list = document.getElementById("contactsList");
+
+      const { data, error } = await db
+        .from(cfg.contactsTable)
+        .select("id, name, email, message, is_read, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (error) {
+        list.innerHTML = `<p class="status danger">Kontaktní zprávy se nepodařilo načíst.</p>`;
+        console.error(error);
+        return;
+      }
+
+      if (!data.length) {
+        list.innerHTML = `<p class="status">Žádné kontaktní zprávy.</p>`;
+        return;
+      }
+
+      list.innerHTML = data.map(msg => `
+        <div class="admin-item">
+          <small>${window.SUSENKA.formatDateCZ(msg.created_at)} | ${msg.is_read ? "Přečteno" : "Nové"}</small>
+          <h3>${window.SUSENKA.escapeHTML(msg.name)}</h3>
+          <p>${window.SUSENKA.escapeHTML(msg.email || "bez emailu")}</p>
+          <p>${window.SUSENKA.escapeHTML(msg.message)}</p>
+
+          <div class="controls">
+            <button class="btn" onclick="markContactRead(${msg.id}, ${!msg.is_read})">
+              ${msg.is_read ? "Označit jako nové" : "Označit jako přečtené"}
+            </button>
+            <button class="btn danger" onclick="deleteContact(${msg.id})">Smazat</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function markContactRead(id, value) {
+      const { error } = await db
+        .from(cfg.contactsTable)
+        .update({
+          is_read: value
+        })
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        alert("Změna se neuložila.");
+        return;
+      }
+
+      loadContacts();
+    }
+
+    async function deleteContact(id) {
+      if (!confirm("Smazat kontaktní zprávu?")) return;
+
+      const { error } = await db
+        .from(cfg.contactsTable)
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        alert("Zpráva se nepodařila smazat.");
+        return;
+      }
+
+      loadContacts();
     }
 
     async function logoutAdmin() {
