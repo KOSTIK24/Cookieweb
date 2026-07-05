@@ -1,6 +1,4 @@
 // config/app.js
-// Hlavní config pro Sušenka Web.
-// Firebase nepoužíváme. Používáme Supabase.
 
 const SUPABASE_URL = "https://vvgxxgtuzxcyxsmoqoik.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2Z3h4Z3R1enhjeXhzbW9xb2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNDc1NDQsImV4cCI6MjA5ODgyMzU0NH0.FBnnv61ECcE5mlX7vA0T3cO54MMSuCF-rJhJ6iT0c7w";
@@ -28,12 +26,12 @@ try {
 
   if (window.supabase && cleanUrl.startsWith("https://") && cleanKey.length > 20) {
     supabaseClient = window.supabase.createClient(cleanUrl, cleanKey);
-    console.log("Supabase připojeno.");
+    console.log("Databáze připojena.");
   } else {
-    console.warn("Supabase není správně nastavené v config/app.js.");
+    console.warn("Databáze není správně nastavená v config/app.js.");
   }
 } catch (error) {
-  console.error("Chyba Supabase configu:", error);
+  console.error("Chyba configu:", error);
 }
 
 function escapeHTML(text) {
@@ -107,7 +105,6 @@ async function logoutUser() {
   window.location.href = "login.html";
 }
 
-// Nový hlavní objekt pro login/chat/admin/novinky
 window.SUSENKA = {
   supabase: supabaseClient,
   config: APP_CONFIG,
@@ -119,7 +116,6 @@ window.SUSENKA = {
   logoutUser
 };
 
-// Kompatibilita pro hra.html, protože tam jsem předtím použil SUSENKA_CONFIG
 window.SUSENKA_CONFIG = {
   supabase: supabaseClient,
 
