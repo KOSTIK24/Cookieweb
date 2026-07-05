@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Sušenka Web | Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="../style.css">
+
+  <style>
+    .chat-messages {
+      height: 420px;
+      overflow-y: auto;
+      background: rgba(0,0,0,.20);
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 16px;
+      padding: 12px;
+    }
+
+    .chat-message {
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      word-break: break-word;
+    }
+
+    .chat-message strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .chat-message small {
+      opacity: .65;
+      font-size: 11px;
+      float: right;
+    }
+
+    .chat-form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .chat-form input {
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
+      color: white;
+      border-radius: 14px;
+      padding: 12px 14px;
+      outline: none;
+    }
+
+    .status {
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+    .danger {
+      color: #ffb4b4;
+      font-weight: 800;
+    }
+
+    @media (max-width: 850px) {
+      .chat-form {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="../images/susenka-logo.png" alt="logo" class="brand-logo">
+      <span class="brand-name">Sušenka <b>Web</b></span>
+    </div>
+
+    <nav class="nav">
+      <a href="../index.html">Domů</a>
+      <a href="hra.html">Hra</a>
+      <a href="novinky.html">Novinky</a>
+      <a href="chat.html">Chat</a>
+      <a href="admin.html">Admin</a>
+      <a href="login.html">Login</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="card hero animate-pop">
+      <h1>Sušenka Chat 💬</h1>
+      <p>Společný chat přes Supabase. Psát můžou jen přihlášení uživatelé.</p>
+      <p id="userInfo" class="status">Kontroluju login...</p>
+    </section>
+
+    <section class="card">
+      <div id="chatMessages" class="chat-messages">
+        <p class="status">Načítám...</p>
+      </div>
+
+      <div class="chat-form">
+        <input id="chatInput" maxlength="300" placeholder="Napiš zprávu..." autocomplete="off">
+        <button class="btn primary" onclick="sendMessage()">Poslat</button>
+      </div>
+
+      <p id="chatStatus" class="status"></p>
+    </section>
+  </main>
+
+  <footer class="footer">© 2026 Sušenka Web</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../config/app.js"></script>
+
+  <script>
+    const db = window.SUSENKA.supabase;
+    const cfg = window.SUSENKA.config;
+
+    const chatMessages = document.getElementById("chatMessages");
+    const chatInput = document.getElementById("chatInput");
+    const chatStatus = document.getElementById("chatStatus");
+    const userInfo = document.getElementById("userInfo");
+
+    let currentUser = null;
+    let currentProfile = null;
+    let chatChannel = null;
+
+    function setStatus(text, danger = false) {
+      chatStatus.textContent = text;
+      chatStatus.className = danger ? "status danger" : "status";
+    }
+
+    function renderMessage(row) {
+      const div = document.createElement("div");
+      div.className = "chat-message";
+
+      div.innerHTML = `
+        <small>${window.SUSENKA.formatDateCZ(row.created_at)}</small>
+        <strong>${window.SUSENKA.escapeHTML(row.username)}</strong>
+        <div>${window.SUSENKA.escapeHTML(row.message)}</div>
+      `;
+
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    async function initChat() {
+      if (!db) {
+        chatMessages.innerHTML = `<p class="status danger">Supabase není nastavený.</p>`;
+        return;
+      }
+
+      currentUser = await window.SUSENKA.getCurrentUser();
+      currentProfile = await window.SUSENKA.getCurrentProfile();
+
+      if (!currentUser) {
+        userInfo.innerHTML = `Nejsi přihlášený. <a href="login.html">Přihlas se tady.</a>`;
+        chatInput.disabled = true;
+      } else {
+        userInfo.innerHTML = `Píšeš jako <b>${window.SUSENKA.escapeHTML(currentProfile?.username || currentUser.email)}</b>`;
+      }
+
+      await loadMessages();
+      startRealtime();
+    }
+
+    async function loadMessages() {
+      const { data, error } = await db
+        .from(cfg.chatTable)
+        .select("id, user_id, username, message, created_at")
+        .order("created_at", { ascending: false })
+        .limit(cfg.maxChatMessages);
+
+      if (error) {
+        chatMessages.innerHTML = `<p class="status danger">Chat se nepodařilo načíst.</p>`;
+        console.error(error);
+        return;
+      }
+
+      chatMessages.innerHTML = "";
+
+      const rows = [...data].reverse();
+
+      if (rows.length === 0) {
+        chatMessages.innerHTML = `<p class="status">Zatím tu nic není.</p>`;
+        return;
+      }
+
+      rows.forEach(renderMessage);
+    }
+
+    function startRealtime() {
+      if (chatChannel) return;
+
+      chatChannel = db
+        .channel("site-chat")
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: cfg.chatTable
+          },
+          payload => {
+            const empty = chatMessages.querySelector(".status");
+            if (empty) chatMessages.innerHTML = "";
+            renderMessage(payload.new);
+          }
+        )
+        .subscribe(status => {
+          if (status === "SUBSCRIBED") {
+            setStatus("Chat je online.");
+          }
+        });
+    }
+
+    async function sendMessage() {
+      if (!currentUser) {
+        return setStatus("Nejdřív se přihlas.", true);
+      }
+
+      const message = chatInput.value.trim().slice(0, cfg.maxChatLength);
+
+      if (!message) {
+        return setStatus("Zpráva je prázdná.", true);
+      }
+
+      chatInput.value = "";
+
+      const username = currentProfile?.username || currentUser.email?.split("@")[0] || "user";
+
+      const { error } = await db
+        .from(cfg.chatTable)
+        .insert({
+          user_id: currentUser.id,
+          username,
+          message
+        });
+
+      if (error) {
+        console.error(error);
+        return setStatus("Zpráva se neposlala.", true);
+      }
+
+      setStatus("Odesláno.");
+    }
+
+    chatInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        sendMessage();
+      }
+    });
+
+    initChat();
+  </script>
+</body>
+</html>
