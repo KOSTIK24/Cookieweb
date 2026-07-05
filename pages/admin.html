@@ -81,7 +81,7 @@
 <body>
   <header class="topbar">
     <div class="brand">
-      <img src="../images/susenka-logo.png" alt="logo" class="brand-logo">
+      <img src="../images/susenka.png" alt="logo" class="brand-logo">
       <span class="brand-name">Sušenka <b>Web</b></span>
     </div>
 
@@ -181,7 +181,713 @@
 
     async function initAdmin() {
       if (!db) {
-        return setAdminStatus("Supabase není nastavený.", true);
+        return setAdminStatus("Databáze není nastavená.", true);
+      }
+
+      const user = await window.SUSENKA.getCurrentUser();
+
+      if (!user) {
+        setAdminStatus("Nejsi přihlášený. Přihlas se přes login.html.", true);
+        return;
+      }
+
+      const isAdmin = await window.SUSENKA.isCurrentUserAdmin();
+
+      if (!isAdmin) {
+        setAdminStatus("Nemáš admin oprávnění.", true);
+        return;
+      }
+
+      setAdminStatus("Admin přístup povolen.", false, true);
+
+      adminContent.style.display = "block";
+      postsPanel.style.display = "block";
+      chatPanel.style.display = "block";
+
+      loadPosts();
+      loadChat();
+    }
+
+    async function createPost() {
+      const user = await window.SUSENKA.getCurrentUser();
+
+      if (!user) {
+        return setPostStatus("Nejsi přihlášený.", true);
+      }
+
+      const type = document.getElementById("postType").value;
+      const title = document.getElementById("postTitle").value.trim();
+      const body = document.getElementById("postBody").value.trim();
+      const rawDate = document.getElementById("postDate").value;
+
+      if (!title || !body) {
+        return setPostStatus("Vyplň název a text.", true);
+      }
+
+      const starts_at = rawDate ? new Date(rawDate).toISOString() : null;
+
+      const { error } = await db
+        .from(cfg.postsTable)
+        .insert({
+          type,
+          title,
+          body,
+          starts_at,
+          created_by: user.id
+        });
+
+      if (error) {
+        console.error(error);
+        return setPostStatus("Nepodařilo se publikovat.", true);
+      }
+
+      document.getElementById("postTitle").value = "";
+      document.getElementById("postBody").value = "";
+      document.getElementById("postDate").value = "";
+
+      setPostStatus("Publikováno.");
+      loadPosts();
+    }
+
+    async function loadPosts() {
+      const list = document.getElementById("postsList");
+
+      const { data, error } = await db
+        .from(cfg.postsTable)
+        .select("id, type, title, body, starts_at, created_at")
+        .order("created_at", { ascending: false })
+        .limit(30);
+
+      if (error) {
+        list.innerHTML = `<p class="status danger">Příspěvky se nepodařilo načíst.</p>`;
+        console.error(error);
+        return;
+      }
+
+      if (!data.length) {
+        list.innerHTML = `<p class="status">Zatím žádné příspěvky.</p>`;
+        return;
+      }
+
+      list.innerHTML = data.map(post => `
+        <div class="admin-item">
+          <small>${post.type.toUpperCase()} | ${window.SUSENKA.formatDateCZ(post.created_at)}</small>
+          <h3>${window.SUSENKA.escapeHTML(post.title)}</h3>
+          <p>${window.SUSENKA.escapeHTML(post.body)}</p>
+          ${post.starts_at ? `<p><b>Event čas:</b> ${window.SUSENKA.formatDateCZ(post.starts_at)}</p>` : ""}
+          <button class="btn" onclick="deletePost(${post.id})">Smazat</button>
+        </div>
+      `).join("");
+    }
+
+    async function deletePost(id) {
+      if (!confirm("Smazat příspěvek?")) return;
+
+      const { error } = await db
+        .from(cfg.postsTable)
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        alert("Nepodařilo se smazat.");
+        return;
+      }
+
+      loadPosts();
+    }
+
+    async function loadChat() {
+      const list = document.getElementById("chatList");
+
+      const { data, error } = await db
+        .from(cfg.chatTable)
+        .select("id, username, message, created_at")
+        .order("created_at", { ascending: false })
+        .limit(30);
+
+      if (error) {
+        list.innerHTML = `<p class="status danger">Chat se nepodařilo načíst.</p>`;
+        console.error(error);
+        return;
+      }
+
+      if (!data.length) {
+        list.innerHTML = `<p class="status">Chat je prázdný.</p>`;
+        return;
+      }
+
+      list.innerHTML = data.map(msg => `
+        <div class="admin-item">
+          <small>${window.SUSENKA.formatDateCZ(msg.created_at)}</small>
+          <h3>${window.SUSENKA.escapeHTML(msg.username)}</h3>
+          <p>${window.SUSENKA.escapeHTML(msg.message)}</p>
+          <button class="btn" onclick="deleteChatMessage(${msg.id})">Smazat zprávu</button>
+        </div>
+      `).join("");
+    }
+
+    async function deleteChatMessage(id) {
+      if (!confirm("Smazat chat zprávu?")) return;
+
+      const { error } = await db
+        .from(cfg.chatTable)
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        alert("Nepodařilo se smazat zprávu.");
+        return;
+      }
+
+      loadChat();
+    }
+
+    async function logoutAdmin() {
+      await window.SUSENKA.logoutUser();
+    }
+
+    initAdmin();
+  </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Sušenka Web | Admin Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="../style.css">
+
+  <style>
+    .admin-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .form-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .form-stack input,
+    .form-stack select,
+    .form-stack textarea {
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
+      color: white;
+      border-radius: 14px;
+      padding: 12px 14px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .form-stack textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .panel-box {
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .admin-item {
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .admin-item small {
+      opacity: .65;
+    }
+
+    .status {
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+    .danger {
+      color: #ffb4b4;
+      font-weight: 800;
+    }
+
+    .success {
+      color: #baffc9;
+      font-weight: 800;
+    }
+
+    @media (max-width: 850px) {
+      .admin-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="../images/susenka.png" alt="logo" class="brand-logo">
+      <span class="brand-name">Sušenka <b>Web</b></span>
+    </div>
+
+    <nav class="nav">
+      <a href="../index.html">Domů</a>
+      <a href="hra.html">Hra</a>
+      <a href="novinky.html">Novinky</a>
+      <a href="chat.html">Chat</a>
+      <a href="admin.html">Admin</a>
+      <a href="login.html">Login</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="card hero animate-pop">
+      <h1>Admin Panel 👑</h1>
+      <p>Tady může admin přidávat news, eventy a kontrolovat chat.</p>
+      <p id="adminStatus" class="status">Kontroluju oprávnění...</p>
+    </section>
+
+    <section id="adminContent" class="card" style="display:none;">
+      <div class="admin-grid">
+        <div class="panel-box">
+          <h2>Přidat news / event</h2>
+
+          <div class="form-stack">
+            <select id="postType">
+              <option value="news">News</option>
+              <option value="event">Event</option>
+            </select>
+
+            <input id="postTitle" maxlength="80" placeholder="Název">
+
+            <textarea id="postBody" maxlength="1000" placeholder="Text..."></textarea>
+
+            <input id="postDate" type="datetime-local">
+
+            <button class="btn primary" onclick="createPost()">Publikovat</button>
+          </div>
+
+          <p id="postStatus" class="status"></p>
+        </div>
+
+        <div class="panel-box">
+          <h2>Admin info</h2>
+          <p class="status">
+            News a eventy se zobrazují na stránce <b>novinky.html</b>.
+          </p>
+
+          <div class="controls">
+            <button class="btn" onclick="logoutAdmin()">Odhlásit</button>
+            <a class="btn" href="novinky.html">Otevřít novinky</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="postsPanel" class="card" style="display:none;">
+      <h2>Publikované příspěvky</h2>
+      <div id="postsList">
+        <p class="status">Načítám...</p>
+      </div>
+    </section>
+
+    <section id="chatPanel" class="card" style="display:none;">
+      <h2>Poslední chat zprávy</h2>
+      <div id="chatList">
+        <p class="status">Načítám...</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">© 2026 Sušenka Web</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../config/app.js"></script>
+
+  <script>
+    const db = window.SUSENKA.supabase;
+    const cfg = window.SUSENKA.config;
+
+    const adminStatus = document.getElementById("adminStatus");
+    const adminContent = document.getElementById("adminContent");
+    const postsPanel = document.getElementById("postsPanel");
+    const chatPanel = document.getElementById("chatPanel");
+    const postStatus = document.getElementById("postStatus");
+
+    function setAdminStatus(text, danger = false, success = false) {
+      adminStatus.textContent = text;
+      adminStatus.className = danger ? "status danger" : success ? "status success" : "status";
+    }
+
+    function setPostStatus(text, danger = false) {
+      postStatus.textContent = text;
+      postStatus.className = danger ? "status danger" : "status success";
+    }
+
+    async function initAdmin() {
+      if (!db) {
+        return setAdminStatus("Databáze není nastavená.", true);
+      }
+
+      const user = await window.SUSENKA.getCurrentUser();
+
+      if (!user) {
+        setAdminStatus("Nejsi přihlášený. Přihlas se přes login.html.", true);
+        return;
+      }
+
+      const isAdmin = await window.SUSENKA.isCurrentUserAdmin();
+
+      if (!isAdmin) {
+        setAdminStatus("Nemáš admin oprávnění.", true);
+        return;
+      }
+
+      setAdminStatus("Admin přístup povolen.", false, true);
+
+      adminContent.style.display = "block";
+      postsPanel.style.display = "block";
+      chatPanel.style.display = "block";
+
+      loadPosts();
+      loadChat();
+    }
+
+    async function createPost() {
+      const user = await window.SUSENKA.getCurrentUser();
+
+      if (!user) {
+        return setPostStatus("Nejsi přihlášený.", true);
+      }
+
+      const type = document.getElementById("postType").value;
+      const title = document.getElementById("postTitle").value.trim();
+      const body = document.getElementById("postBody").value.trim();
+      const rawDate = document.getElementById("postDate").value;
+
+      if (!title || !body) {
+        return setPostStatus("Vyplň název a text.", true);
+      }
+
+      const starts_at = rawDate ? new Date(rawDate).toISOString() : null;
+
+      const { error } = await db
+        .from(cfg.postsTable)
+        .insert({
+          type,
+          title,
+          body,
+          starts_at,
+          created_by: user.id
+        });
+
+      if (error) {
+        console.error(error);
+        return setPostStatus("Nepodařilo se publikovat.", true);
+      }
+
+      document.getElementById("postTitle").value = "";
+      document.getElementById("postBody").value = "";
+      document.getElementById("postDate").value = "";
+
+      setPostStatus("Publikováno.");
+      loadPosts();
+    }
+
+    async function loadPosts() {
+      const list = document.getElementById("postsList");
+
+      const { data, error } = await db
+        .from(cfg.postsTable)
+        .select("id, type, title, body, starts_at, created_at")
+        .order("created_at", { ascending: false })
+        .limit(30);
+
+      if (error) {
+        list.innerHTML = `<p class="status danger">Příspěvky se nepodařilo načíst.</p>`;
+        console.error(error);
+        return;
+      }
+
+      if (!data.length) {
+        list.innerHTML = `<p class="status">Zatím žádné příspěvky.</p>`;
+        return;
+      }
+
+      list.innerHTML = data.map(post => `
+        <div class="admin-item">
+          <small>${post.type.toUpperCase()} | ${window.SUSENKA.formatDateCZ(post.created_at)}</small>
+          <h3>${window.SUSENKA.escapeHTML(post.title)}</h3>
+          <p>${window.SUSENKA.escapeHTML(post.body)}</p>
+          ${post.starts_at ? `<p><b>Event čas:</b> ${window.SUSENKA.formatDateCZ(post.starts_at)}</p>` : ""}
+          <button class="btn" onclick="deletePost(${post.id})">Smazat</button>
+        </div>
+      `).join("");
+    }
+
+    async function deletePost(id) {
+      if (!confirm("Smazat příspěvek?")) return;
+
+      const { error } = await db
+        .from(cfg.postsTable)
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        alert("Nepodařilo se smazat.");
+        return;
+      }
+
+      loadPosts();
+    }
+
+    async function loadChat() {
+      const list = document.getElementById("chatList");
+
+      const { data, error } = await db
+        .from(cfg.chatTable)
+        .select("id, username, message, created_at")
+        .order("created_at", { ascending: false })
+        .limit(30);
+
+      if (error) {
+        list.innerHTML = `<p class="status danger">Chat se nepodařilo načíst.</p>`;
+        console.error(error);
+        return;
+      }
+
+      if (!data.length) {
+        list.innerHTML = `<p class="status">Chat je prázdný.</p>`;
+        return;
+      }
+
+      list.innerHTML = data.map(msg => `
+        <div class="admin-item">
+          <small>${window.SUSENKA.formatDateCZ(msg.created_at)}</small>
+          <h3>${window.SUSENKA.escapeHTML(msg.username)}</h3>
+          <p>${window.SUSENKA.escapeHTML(msg.message)}</p>
+          <button class="btn" onclick="deleteChatMessage(${msg.id})">Smazat zprávu</button>
+        </div>
+      `).join("");
+    }
+
+    async function deleteChatMessage(id) {
+      if (!confirm("Smazat chat zprávu?")) return;
+
+      const { error } = await db
+        .from(cfg.chatTable)
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        alert("Nepodařilo se smazat zprávu.");
+        return;
+      }
+
+      loadChat();
+    }
+
+    async function logoutAdmin() {
+      await window.SUSENKA.logoutUser();
+    }
+
+    initAdmin();
+  </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Sušenka Web | Admin Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="../style.css">
+
+  <style>
+    .admin-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .form-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .form-stack input,
+    .form-stack select,
+    .form-stack textarea {
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
+      color: white;
+      border-radius: 14px;
+      padding: 12px 14px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .form-stack textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .panel-box {
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .admin-item {
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .admin-item small {
+      opacity: .65;
+    }
+
+    .status {
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+    .danger {
+      color: #ffb4b4;
+      font-weight: 800;
+    }
+
+    .success {
+      color: #baffc9;
+      font-weight: 800;
+    }
+
+    @media (max-width: 850px) {
+      .admin-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="../images/susenka.png" alt="logo" class="brand-logo">
+      <span class="brand-name">Sušenka <b>Web</b></span>
+    </div>
+
+    <nav class="nav">
+      <a href="../index.html">Domů</a>
+      <a href="hra.html">Hra</a>
+      <a href="novinky.html">Novinky</a>
+      <a href="chat.html">Chat</a>
+      <a href="admin.html">Admin</a>
+      <a href="login.html">Login</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="card hero animate-pop">
+      <h1>Admin Panel 👑</h1>
+      <p>Tady může admin přidávat news, eventy a kontrolovat chat.</p>
+      <p id="adminStatus" class="status">Kontroluju oprávnění...</p>
+    </section>
+
+    <section id="adminContent" class="card" style="display:none;">
+      <div class="admin-grid">
+        <div class="panel-box">
+          <h2>Přidat news / event</h2>
+
+          <div class="form-stack">
+            <select id="postType">
+              <option value="news">News</option>
+              <option value="event">Event</option>
+            </select>
+
+            <input id="postTitle" maxlength="80" placeholder="Název">
+
+            <textarea id="postBody" maxlength="1000" placeholder="Text..."></textarea>
+
+            <input id="postDate" type="datetime-local">
+
+            <button class="btn primary" onclick="createPost()">Publikovat</button>
+          </div>
+
+          <p id="postStatus" class="status"></p>
+        </div>
+
+        <div class="panel-box">
+          <h2>Admin info</h2>
+          <p class="status">
+            News a eventy se zobrazují na stránce <b>novinky.html</b>.
+          </p>
+
+          <div class="controls">
+            <button class="btn" onclick="logoutAdmin()">Odhlásit</button>
+            <a class="btn" href="novinky.html">Otevřít novinky</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="postsPanel" class="card" style="display:none;">
+      <h2>Publikované příspěvky</h2>
+      <div id="postsList">
+        <p class="status">Načítám...</p>
+      </div>
+    </section>
+
+    <section id="chatPanel" class="card" style="display:none;">
+      <h2>Poslední chat zprávy</h2>
+      <div id="chatList">
+        <p class="status">Načítám...</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">© 2026 Sušenka Web</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../config/app.js"></script>
+
+  <script>
+    const db = window.SUSENKA.supabase;
+    const cfg = window.SUSENKA.config;
+
+    const adminStatus = document.getElementById("adminStatus");
+    const adminContent = document.getElementById("adminContent");
+    const postsPanel = document.getElementById("postsPanel");
+    const chatPanel = document.getElementById("chatPanel");
+    const postStatus = document.getElementById("postStatus");
+
+    function setAdminStatus(text, danger = false, success = false) {
+      adminStatus.textContent = text;
+      adminStatus.className = danger ? "status danger" : success ? "status success" : "status";
+    }
+
+    function setPostStatus(text, danger = false) {
+      postStatus.textContent = text;
+      postStatus.className = danger ? "status danger" : "status success";
+    }
+
+    async function initAdmin() {
+      if (!db) {
+        return setAdminStatus("Databáze není nastavená.", true);
       }
 
       const user = await window.SUSENKA.getCurrentUser();
