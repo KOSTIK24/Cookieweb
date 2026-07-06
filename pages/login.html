@@ -70,8 +70,11 @@
       <a href="hra.html">Hra</a>
       <a href="novinky.html">Novinky</a>
       <a href="chat.html">Chat</a>
+      <a href="team.html">Team</a>
+      <a href="kontakt.html">Kontakt</a>
+      <a href="faq.html">FAQ</a>
       <a href="admin.html">Admin</a>
-      <a href="login.html">Login</a>
+      <a href="login.html" class="active">Login</a>
     </nav>
   </header>
 
@@ -165,10 +168,15 @@
         return setStatus("Vyplň jméno, email a heslo.", true);
       }
 
+      const redirectUrl = window.SUSENKA.getSiteUrl(window.SUSENKA.config.confirmPath);
+
+      console.log("Email redirect URL:", redirectUrl);
+
       const { error } = await db.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: redirectUrl,
           data: {
             username
           }
@@ -179,7 +187,7 @@
         return setStatus(error.message, true);
       }
 
-      setStatus("Registrace hotová. Když bude potřeba, potvrď email.");
+      setStatus("Registrace odeslána. Zkontroluj email a potvrď účet.");
       refreshUserInfo();
     }
 
