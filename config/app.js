@@ -1,9 +1,10 @@
-// config/app.js
-
 const SUPABASE_URL = "https://vvgxxgtuzxcyxsmoqoik.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2Z3h4Z3R1enhjeXhzbW9xb2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNDc1NDQsImV4cCI6MjA5ODgyMzU0NH0.FBnnv61ECcE5mlX7vA0T3cO54MMSuCF-rJhJ6iT0c7w";
 
 const APP_CONFIG = {
+  siteUrl: "https://kostik24.github.io/Cookieweb/",
+  confirmPath: "pages/confirm.html",
+
   chatTable: "site_chat_messages",
   gameChatTable: "game_chat_messages",
   postsTable: "site_posts",
@@ -57,6 +58,17 @@ function formatDateCZ(value) {
   } catch {
     return "";
   }
+}
+
+function getSiteUrl(path = "") {
+  const baseUrl = APP_CONFIG.siteUrl.replace(/\/+$/, "");
+  const cleanPath = String(path || "").replace(/^\/+/, "");
+
+  if (!cleanPath) {
+    return `${baseUrl}/`;
+  }
+
+  return `${baseUrl}/${cleanPath}`;
 }
 
 async function getCurrentUser() {
@@ -128,6 +140,7 @@ window.SUSENKA = {
 
   escapeHTML,
   formatDateCZ,
+  getSiteUrl,
 
   getCurrentUser,
   getCurrentProfile,
