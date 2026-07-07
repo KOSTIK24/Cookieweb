@@ -12,9 +12,10 @@ const APP_CONFIG = {
   adminsTable: "admin_users",
   teamTable: "team_members",
   faqTable: "faq_items",
-  contactsTable: "contact_messages",
-  scoresTable: "game_scores",
-
+ contactsTable: "contact_messages",
+gamesTable: "games",
+scoresTable: "game_scores",
+  
   maxChatMessages: 80,
   maxGameChatMessages: 50,
   maxChatLength: 300,
