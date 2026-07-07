@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Sušenka Web | Leaderboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="../style.css">
+
+  <style>
+    .leader-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .leader-item {
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .leader-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .leader-rank {
+      font-weight: 900;
+      font-size: 20px;
+      margin-right: 8px;
+    }
+
+    .leader-name {
+      font-weight: 900;
+      font-size: 17px;
+    }
+
+    .leader-score {
+      color: #baffc9;
+      font-weight: 900;
+      white-space: nowrap;
+      font-size: 16px;
+    }
+
+    .leader-sub {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status {
+      color: var(--muted);
+    }
+
+    .leader-actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 850px) {
+      .leader-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .leader-item {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="../images/susenka.png" alt="logo" class="brand-logo">
+      <span class="brand-name">Sušenka <b>Web</b></span>
+    </div>
+
+    <nav class="nav">
+      <a href="../index.html">Domů</a>
+      <a href="hra.html">Hra</a>
+      <a href="leaderboard.html" class="active">Leaderboard</a>
+      <a href="novinky.html">Novinky</a>
+      <a href="chat.html">Chat</a>
+      <a href="team.html">Team</a>
+      <a href="kontakt.html">Kontakt</a>
+      <a href="faq.html">FAQ</a>
+      <a href="admin.html">Admin</a>
+      <a href="login.html">Login</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="card hero animate-pop">
+      <h1>Leaderboard 🏆</h1>
+      <p>Kdo má nejvíc cookies a kdo má nejvíc výher v SBP bludišti.</p>
+
+      <div class="leader-actions">
+        <a class="btn primary" href="hra.html">Hrát hry</a>
+        <button class="btn" onclick="loadLeaderboard()">Refresh</button>
+      </div>
+    </section>
+
+    <section class="leader-grid">
+      <div class="card">
+        <h2>🍪 Nejvíc cookies</h2>
+
+        <div id="cookieLeaderboard">
+          <p class="status">Načítám...</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>⚔️ Nejvíc SBP maze winů</h2>
+
+        <div id="mazeLeaderboard">
+          <p class="status">Načítám...</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">© 2026 Sušenka Web</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../config/app.js"></script>
+
+  <script>
+    const db = window.SUSENKA.supabase;
+    const cfg = window.SUSENKA.config;
+
+    const cookieEl = document.getElementById("cookieLeaderboard");
+    const mazeEl = document.getElementById("mazeLeaderboard");
+
+    function formatNumber(num) {
+      num = Number(num) || 0;
+
+      if (num >= 1000000000000) return (num / 1000000000000).toFixed(1) + "T";
+      if (num >= 1000000000) return (num / 1000000000).toFixed(1) + "B";
+      if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+      if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+
+      return Math.floor(num).toString();
+    }
+
+    function renderList(element, rows, type) {
+      if (!rows || rows.length === 0) {
+        element.innerHTML = `<p class="status">Zatím tu nikdo není.</p>`;
+        return;
+      }
+
+      element.innerHTML = rows.map((row, index) => {
+        const score = type === "cookies"
+          ? `${formatNumber(row.cookie_best)} 🍪`
+          : `${Number(row.maze_wins) || 0} winů`;
+
+        const other = type === "cookies"
+          ? `${Number(row.maze_wins) || 0} maze winů`
+          : `${formatNumber(row.cookie_best)} cookies`;
+
+        return `
+          <div class="leader-item">
+            <div class="leader-left">
+              <div>
+                <span class="leader-rank">#${index + 1}</span>
+                <span class="leader-name">${window.SUSENKA.escapeHTML(row.username || "user")}</span>
+              </div>
+
+              <div class="leader-sub">${other}</div>
+            </div>
+
+            <div class="leader-score">${score}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function loadLeaderboard() {
+      if (!db) {
+        cookieEl.innerHTML = `<p class="status">Databáze není nastavená.</p>`;
+        mazeEl.innerHTML = `<p class="status">Databáze není nastavená.</p>`;
+        return;
+      }
+
+      if (!cfg.scoresTable) {
+        cookieEl.innerHTML = `<p class="status">V config/app.js chybí scoresTable.</p>`;
+        mazeEl.innerHTML = `<p class="status">V config/app.js chybí scoresTable.</p>`;
+        return;
+      }
+
+      cookieEl.innerHTML = `<p class="status">Načítám...</p>`;
+      mazeEl.innerHTML = `<p class="status">Načítám...</p>`;
+
+      const { data: cookies, error: cookieError } = await db
+        .from(cfg.scoresTable)
+        .select("username, cookie_best, maze_wins, updated_at")
+        .order("cookie_best", { ascending: false })
+        .limit(10);
+
+      const { data: maze, error: mazeError } = await db
+        .from(cfg.scoresTable)
+        .select("username, cookie_best, maze_wins, updated_at")
+        .order("maze_wins", { ascending: false })
+        .limit(10);
+
+      if (cookieError) {
+        console.error(cookieError);
+        cookieEl.innerHTML = `<p class="status">Cookie leaderboard se nepodařilo načíst.</p>`;
+      } else {
+        renderList(cookieEl, cookies, "cookies");
+      }
+
+      if (mazeError) {
+        console.error(mazeError);
+        mazeEl.innerHTML = `<p class="status">Maze leaderboard se nepodařilo načíst.</p>`;
+      } else {
+        renderList(mazeEl, maze, "maze");
+      }
+    }
+
+    loadLeaderboard();
+  </script>
+</body>
+</html>
