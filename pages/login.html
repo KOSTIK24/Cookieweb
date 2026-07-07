@@ -50,6 +50,13 @@
       font-weight: 800;
     }
 
+    .mini-info {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 10px;
+      line-height: 1.45;
+    }
+
     @media (max-width: 850px) {
       .auth-grid {
         grid-template-columns: 1fr;
@@ -68,6 +75,7 @@
     <nav class="nav">
       <a href="../index.html">Domů</a>
       <a href="hra.html">Hra</a>
+      <a href="leaderboard.html">Leaderboard</a>
       <a href="novinky.html">Novinky</a>
       <a href="chat.html">Chat</a>
       <a href="team.html">Team</a>
@@ -94,6 +102,10 @@
             <input id="loginPassword" type="password" placeholder="Heslo">
             <button class="btn primary" onclick="login()">Přihlásit</button>
           </div>
+
+          <p class="mini-info">
+            Když to píše wrong credentials, účet buď není potvrzený, nebo je špatné heslo.
+          </p>
         </div>
 
         <div class="auth-box">
@@ -104,7 +116,12 @@
             <input id="registerEmail" type="email" placeholder="Email">
             <input id="registerPassword" type="password" placeholder="Heslo">
             <button class="btn primary" onclick="register()">Registrovat</button>
+            <button class="btn" onclick="resendConfirmation()">Poslat potvrzovací email znovu</button>
           </div>
+
+          <p class="mini-info">
+            Po registraci otevři email a potvrď účet. Starý potvrzovací link může expirovat.
+          </p>
         </div>
       </div>
 
@@ -113,6 +130,7 @@
       <div class="controls">
         <button class="btn" onclick="logout()">Odhlásit</button>
         <a class="btn" href="chat.html">Jít na chat</a>
+        <a class="btn" href="leaderboard.html">Leaderboard</a>
       </div>
     </section>
   </main>
@@ -130,6 +148,10 @@
     function setStatus(text, danger = false) {
       authStatus.textContent = text;
       authStatus.className = danger ? "status danger" : "status success";
+    }
+
+    function getRegisterRedirectUrl() {
+      return window.SUSENKA.getSiteUrl(window.SUSENKA.config.confirmPath);
     }
 
     async function refreshUserInfo() {
@@ -152,8 +174,10 @@
 
       currentUserInfo.innerHTML = `
         Přihlášen jako <b>${window.SUSENKA.escapeHTML(profile?.username || user.email)}</b>
+        ${profile?.role ? ` | Role: <b>${window.SUSENKA.escapeHTML(profile.role)}</b>` : ""}
         ${isAdmin ? " | 👑 Admin" : ""}
       `;
+
       currentUserInfo.className = "status success";
     }
 
@@ -168,7 +192,7 @@
         return setStatus("Vyplň jméno, email a heslo.", true);
       }
 
-      const redirectUrl = window.SUSENKA.getSiteUrl(window.SUSENKA.config.confirmPath);
+      const redirectUrl = getRegisterRedirectUrl();
 
       console.log("Email redirect URL:", redirectUrl);
 
@@ -191,6 +215,36 @@
       refreshUserInfo();
     }
 
+    async function resendConfirmation() {
+      if (!db) return setStatus("Databáze není nastavená.", true);
+
+      const email =
+        document.getElementById("registerEmail").value.trim() ||
+        document.getElementById("loginEmail").value.trim();
+
+      if (!email) {
+        return setStatus("Napiš email do registrace nebo loginu.", true);
+      }
+
+      const redirectUrl = getRegisterRedirectUrl();
+
+      console.log("Resend redirect URL:", redirectUrl);
+
+      const { error } = await db.auth.resend({
+        type: "signup",
+        email,
+        options: {
+          emailRedirectTo: redirectUrl
+        }
+      });
+
+      if (error) {
+        return setStatus(error.message, true);
+      }
+
+      setStatus("Potvrzovací email byl znovu odeslán.");
+    }
+
     async function login() {
       if (!db) return setStatus("Databáze není nastavená.", true);
 
@@ -207,6 +261,10 @@
       });
 
       if (error) {
+        if (error.message && error.message.toLowerCase().includes("invalid login credentials")) {
+          return setStatus("Wrong credentials. Zkontroluj heslo nebo si znovu pošli potvrzovací email.", true);
+        }
+
         return setStatus(error.message, true);
       }
 
