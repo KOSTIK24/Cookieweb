@@ -1,5 +1,5 @@
 const SUPABASE_URL = "https://vvgxxgtuzxcyxsmoqoik.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2Z3h4Z3R1enhjeXhzbW9xb2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNDc1NDQsImV4cCI6MjA5ODgyMzU0NH0.FBnnv61ECcE5mlX7vA0T3cO54MMSuCF-rJhJ6iT0c7w";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2Z3R1enhjeXhzbW9xb2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNDc1NDQsImV4cCI6MjA5ODgyMzU0NH0.FBnnv61ECcE5mlX7vA0T3cO54MMSuCF-rJhJ6iT0c7w";
 
 const APP_CONFIG = {
   siteUrl: "https://kostik24.github.io/Cookieweb/",
@@ -12,10 +12,10 @@ const APP_CONFIG = {
   adminsTable: "admin_users",
   teamTable: "team_members",
   faqTable: "faq_items",
- contactsTable: "contact_messages",
-gamesTable: "games",
-scoresTable: "game_scores",
-  
+  contactsTable: "contact_messages",
+  gamesTable: "games",
+  scoresTable: "game_scores",
+
   maxChatMessages: 80,
   maxGameChatMessages: 50,
   maxChatLength: 300,
