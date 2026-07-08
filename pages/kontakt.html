@@ -14,18 +14,45 @@
       gap: 18px;
     }
 
-    .status {
-      color: var(--muted);
-      margin-top: 10px;
+    .form-stack {
+      display: grid;
+      gap: 10px;
     }
 
-    .success {
-      color: #baffc9;
-      font-weight: 800;
+    .form-stack input,
+    .form-stack textarea {
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
+      color: white;
+      border-radius: 14px;
+      padding: 12px 14px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .form-stack textarea {
+      min-height: 160px;
+      resize: vertical;
+    }
+
+    .info-box {
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .status {
+      color: var(--muted);
     }
 
     .danger {
       color: #ffb4b4;
+      font-weight: 800;
+    }
+
+    .success {
+      color: #baffc9;
       font-weight: 800;
     }
 
@@ -47,6 +74,7 @@
     <nav class="nav">
       <a href="../index.html">Domů</a>
       <a href="hra.html">Hra</a>
+      <a href="leaderboard.html">Leaderboard</a>
       <a href="novinky.html">Novinky</a>
       <a href="chat.html">Chat</a>
       <a href="team.html">Team</a>
@@ -60,17 +88,17 @@
   <main class="container">
     <section class="card hero animate-pop">
       <h1>Kontakt 📩</h1>
-      <p>Napiš zprávu admin teamu Sušenka Webu.</p>
+      <p>Napiš zprávu adminům Sušenka Webu.</p>
     </section>
 
     <section class="card">
       <div class="contact-grid">
-        <div class="panel-box">
-          <h2>Napsat zprávu</h2>
+        <div>
+          <h2>Odeslat zprávu</h2>
 
           <div class="form-stack">
-            <input id="contactName" maxlength="40" placeholder="Tvoje jméno">
-            <input id="contactEmail" maxlength="120" placeholder="Email / Discord / kontakt">
+            <input id="contactName" maxlength="40" placeholder="Jméno">
+            <input id="contactEmail" maxlength="120" type="email" placeholder="Email / Discord / kontakt">
             <textarea id="contactMessage" maxlength="1000" placeholder="Zpráva..."></textarea>
             <button class="btn primary" onclick="sendContact()">Odeslat</button>
           </div>
@@ -78,14 +106,15 @@
           <p id="contactStatus" class="status"></p>
         </div>
 
-        <div class="panel-box">
-          <h2>Discord 💬</h2>
-          <p class="hint">Nejrychlejší kontakt je přes oficiální Discord server.</p>
+        <div class="info-box">
+          <h2>Info</h2>
+          <p class="status">
+            Zprávy vidí admin v admin panelu. Neposílej hesla ani soukromé tokeny.
+          </p>
 
           <div class="controls">
-            <a class="btn primary" href="https://discord.gg/Sg6RhsrjJZ" target="_blank" rel="noopener noreferrer">
-              Připojit se
-            </a>
+            <a class="btn" href="faq.html">FAQ</a>
+            <a class="btn" href="chat.html">Chat</a>
           </div>
         </div>
       </div>
@@ -100,16 +129,16 @@
   <script>
     const db = window.SUSENKA.supabase;
     const cfg = window.SUSENKA.config;
-    const statusEl = document.getElementById("contactStatus");
+    const contactStatus = document.getElementById("contactStatus");
 
-    function setStatus(text, danger = false) {
-      statusEl.textContent = text;
-      statusEl.className = danger ? "status danger" : "status success";
+    function setContactStatus(text, danger = false) {
+      contactStatus.textContent = text;
+      contactStatus.className = danger ? "status danger" : "status success";
     }
 
     async function sendContact() {
       if (!db) {
-        return setStatus("Databáze není nastavená.", true);
+        return setContactStatus("Databáze není nastavená.", true);
       }
 
       const name = document.getElementById("contactName").value.trim().slice(0, 40);
@@ -117,7 +146,7 @@
       const message = document.getElementById("contactMessage").value.trim().slice(0, 1000);
 
       if (!name || !message) {
-        return setStatus("Vyplň jméno a zprávu.", true);
+        return setContactStatus("Vyplň jméno a zprávu.", true);
       }
 
       const { error } = await db
@@ -125,20 +154,23 @@
         .insert({
           name,
           email,
-          message
+          message,
+          is_read: false
         });
 
       if (error) {
         console.error(error);
-        return setStatus("Zpráva se nepodařila odeslat.", true);
+        return setContactStatus("Zprávu se nepodařilo odeslat.", true);
       }
 
       document.getElementById("contactName").value = "";
       document.getElementById("contactEmail").value = "";
       document.getElementById("contactMessage").value = "";
 
-      setStatus("Zpráva odeslána.");
+      setContactStatus("Zpráva odeslána.");
     }
   </script>
+
+  <script src="../config/global-widgets.js"></script>
 </body>
 </html>
