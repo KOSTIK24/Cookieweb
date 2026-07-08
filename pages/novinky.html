@@ -2,13 +2,13 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8">
-  <title>Sušenka Web | Novinky a Eventy</title>
+  <title>Sušenka Web | Novinky</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link rel="stylesheet" href="../style.css">
 
   <style>
-    .post-grid {
+    .posts-grid {
       display: grid;
       gap: 14px;
     }
@@ -21,28 +21,34 @@
     }
 
     .post-card small {
-      opacity: .65;
+      opacity: .7;
+    }
+
+    .post-card.news {
+      box-shadow: inset 0 0 0 1px rgba(120,180,255,.08);
+    }
+
+    .post-card.event {
+      box-shadow: inset 0 0 0 1px rgba(255,220,120,.12);
     }
 
     .badge {
       display: inline-block;
-      padding: 5px 10px;
+      padding: 4px 9px;
       border-radius: 999px;
-      background: rgba(255,255,255,.12);
-      font-weight: 800;
-      margin-right: 8px;
-    }
-
-    .event {
-      outline: 1px solid rgba(255, 220, 120, .18);
-    }
-
-    .news {
-      outline: 1px solid rgba(170, 150, 255, .18);
+      background: rgba(255,255,255,.1);
+      font-weight: 900;
+      font-size: 12px;
+      margin-right: 6px;
     }
 
     .status {
       color: var(--muted);
+    }
+
+    .danger {
+      color: #ffb4b4;
+      font-weight: 800;
     }
   </style>
 </head>
@@ -57,8 +63,12 @@
     <nav class="nav">
       <a href="../index.html">Domů</a>
       <a href="hra.html">Hra</a>
-      <a href="novinky.html">Novinky</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="novinky.html" class="active">Novinky</a>
       <a href="chat.html">Chat</a>
+      <a href="team.html">Team</a>
+      <a href="kontakt.html">Kontakt</a>
+      <a href="faq.html">FAQ</a>
       <a href="admin.html">Admin</a>
       <a href="login.html">Login</a>
     </nav>
@@ -66,13 +76,20 @@
 
   <main class="container">
     <section class="card hero animate-pop">
-      <h1>Novinky a eventy 📢</h1>
-      <p>Tady se zobrazují příspěvky od adminů.</p>
+      <h1>Novinky & Eventy 📢</h1>
+      <p>Tady najdeš poslední news a eventy ze Sušenka Webu.</p>
+
+      <div class="controls">
+        <button class="btn" onclick="loadPosts()">Refresh</button>
+        <a class="btn" href="admin.html">Admin panel</a>
+      </div>
     </section>
 
     <section class="card">
-      <div id="posts" class="post-grid">
-        <p class="status">Načítám...</p>
+      <h2>Feed</h2>
+
+      <div id="postsList" class="posts-grid">
+        <p class="status">Načítám novinky...</p>
       </div>
     </section>
   </main>
@@ -85,13 +102,15 @@
   <script>
     const db = window.SUSENKA.supabase;
     const cfg = window.SUSENKA.config;
-    const postsEl = document.getElementById("posts");
+    const postsList = document.getElementById("postsList");
 
     async function loadPosts() {
       if (!db) {
-        postsEl.innerHTML = `<p class="status">Databáze není nastavená.</p>`;
+        postsList.innerHTML = `<p class="status danger">Databáze není nastavená.</p>`;
         return;
       }
+
+      postsList.innerHTML = `<p class="status">Načítám...</p>`;
 
       const { data, error } = await db
         .from(cfg.postsTable)
@@ -101,16 +120,16 @@
 
       if (error) {
         console.error(error);
-        postsEl.innerHTML = `<p class="status">Novinky se nepodařilo načíst.</p>`;
+        postsList.innerHTML = `<p class="status danger">Novinky se nepodařilo načíst.</p>`;
         return;
       }
 
-      if (!data.length) {
-        postsEl.innerHTML = `<p class="status">Zatím tu nejsou žádné novinky ani eventy.</p>`;
+      if (!data || data.length === 0) {
+        postsList.innerHTML = `<p class="status">Zatím tu nejsou žádné novinky.</p>`;
         return;
       }
 
-      postsEl.innerHTML = data.map(post => {
+      postsList.innerHTML = data.map(post => {
         const isEvent = post.type === "event";
 
         return `
@@ -134,5 +153,7 @@
 
     loadPosts();
   </script>
+
+  <script src="../config/global-widgets.js"></script>
 </body>
 </html>
