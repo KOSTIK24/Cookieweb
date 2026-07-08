@@ -13,24 +13,24 @@
       gap: 12px;
     }
 
-    .faq-card {
+    .faq-item {
       background: rgba(0,0,0,.18);
       border: 1px solid rgba(255,255,255,.08);
       border-radius: 16px;
       padding: 16px;
     }
 
-    .faq-card h2 {
-      margin-bottom: 8px;
-    }
-
-    .faq-card p {
-      color: var(--muted);
-      margin-bottom: 0;
+    .faq-item h3 {
+      margin-top: 0;
     }
 
     .status {
       color: var(--muted);
+    }
+
+    .danger {
+      color: #ffb4b4;
+      font-weight: 800;
     }
   </style>
 </head>
@@ -45,6 +45,7 @@
     <nav class="nav">
       <a href="../index.html">Domů</a>
       <a href="hra.html">Hra</a>
+      <a href="leaderboard.html">Leaderboard</a>
       <a href="novinky.html">Novinky</a>
       <a href="chat.html">Chat</a>
       <a href="team.html">Team</a>
@@ -62,6 +63,8 @@
     </section>
 
     <section class="card">
+      <h2>Otázky a odpovědi</h2>
+
       <div id="faqList" class="faq-list">
         <p class="status">Načítám FAQ...</p>
       </div>
@@ -78,33 +81,9 @@
     const cfg = window.SUSENKA.config;
     const faqList = document.getElementById("faqList");
 
-    const fallbackFaq = [
-      {
-        question: "Co je Sušenka Web?",
-        answer: "Komunitní web se hrami, chatem, novinkami a eventy."
-      },
-      {
-        question: "Jak se dostanu do chatu?",
-        answer: "Přihlas se přes Login a otevři stránku Chat."
-      },
-      {
-        question: "Kde je Discord?",
-        answer: "Discord najdeš na stránce Team."
-      }
-    ];
-
-    function renderFaq(rows) {
-      faqList.innerHTML = rows.map(item => `
-        <article class="faq-card">
-          <h2>${window.SUSENKA.escapeHTML(item.question)}</h2>
-          <p>${window.SUSENKA.escapeHTML(item.answer)}</p>
-        </article>
-      `).join("");
-    }
-
     async function loadFaq() {
       if (!db) {
-        renderFaq(fallbackFaq);
+        faqList.innerHTML = `<p class="status danger">Databáze není nastavená.</p>`;
         return;
       }
 
@@ -117,19 +96,31 @@
 
       if (error) {
         console.error(error);
-        renderFaq(fallbackFaq);
+        faqList.innerHTML = `<p class="status danger">FAQ se nepodařilo načíst.</p>`;
         return;
       }
 
       if (!data || data.length === 0) {
-        renderFaq(fallbackFaq);
+        faqList.innerHTML = `
+          <div class="faq-item">
+            <h3>FAQ zatím není nastavené</h3>
+            <p class="status">Admin může přidat otázky přes admin panel.</p>
+          </div>
+        `;
         return;
       }
 
-      renderFaq(data);
+      faqList.innerHTML = data.map(item => `
+        <article class="faq-item">
+          <h3>${window.SUSENKA.escapeHTML(item.question)}</h3>
+          <p>${window.SUSENKA.escapeHTML(item.answer)}</p>
+        </article>
+      `).join("");
     }
 
     loadFaq();
   </script>
+
+  <script src="../config/global-widgets.js"></script>
 </body>
 </html>
