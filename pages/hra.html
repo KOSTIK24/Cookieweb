@@ -1,130 +1,1281 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sušenka Web | Hry</title>
-  <link rel="stylesheet" href="../style.css" />
+
+  <link rel="stylesheet" href="../style.css">
+
   <style>
-    .game-tabs { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
-    .game-tab { opacity: .75; }
-    .game-tab.active { opacity: 1; outline: 2px solid rgba(255,255,255,.22); }
-    .game-section { display: none; }
-    .game-section.active { display: block; }
-    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 14px 0; }
-    .stat-box { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.09); border-radius: 14px; padding: 12px; text-align: center; }
-    .stat-box strong { display: block; font-size: 22px; margin-top: 4px; }
-    .cookie-button { border: none; background: transparent; cursor: pointer; padding: 0; position: relative; border-radius: 30px; }
-    .cookie-button img { width: 210px; height: 210px; object-fit: contain; filter: drop-shadow(0 18px 30px rgba(0,0,0,.55)); transition: transform .08s ease, filter .15s ease; user-select: none; -webkit-user-drag: none; }
-    .cookie-button:active img { transform: scale(.92) rotate(-3deg); filter: drop-shadow(0 8px 18px rgba(0,0,0,.6)) brightness(1.08); }
-    .cookie-wrap { display: flex; justify-content: center; align-items: center; padding: 18px; }
-    .floating-plus { position: fixed; pointer-events: none; font-weight: 900; color: #fff; text-shadow: 0 4px 12px rgba(0,0,0,.65); animation: flyUp .8s ease forwards; z-index: 9999; }
-    @keyframes flyUp { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(-55px) scale(1.25); } }
-    .upgrade-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 16px; }
-    .upgrade-card { background: rgba(0,0,0,.18); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 14px; }
-    .upgrade-card h3 { margin: 0 0 6px; }
-    .upgrade-card p { color: var(--muted); margin: 4px 0 12px; }
-    .upgrade-card .btn { width: 100%; }
-    .maze-layout { display: grid; grid-template-columns: 1fr 240px; gap: 18px; align-items: start; }
-    .maze-box { display: flex; justify-content: center; align-items: center; overflow: hidden; }
-    #mazeCanvas { width: 100%; max-width: 640px; aspect-ratio: 1 / 1; border-radius: 18px; background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 18px 50px rgba(0,0,0,.45); image-rendering: pixelated; }
-    .maze-panel { background: rgba(0,0,0,.18); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 14px; }
-    .maze-panel p { color: var(--muted); margin: 8px 0; }
-    .mobile-controls { display: none; grid-template-columns: repeat(3, 64px); gap: 8px; justify-content: center; margin-top: 14px; }
-    .mobile-controls button { min-height: 52px; }
-    .mobile-controls .wide { grid-column: span 3; }
-    .danger-text { color: #ffb4b4; font-weight: 800; }
-    .success-text { color: #baffc9; font-weight: 800; }
-    @media (max-width: 850px) { .stat-grid, .upgrade-grid, .maze-layout { grid-template-columns: 1fr; } .mobile-controls { display: grid; } .cookie-button img { width: 185px; height: 185px; } }
+    .game-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .game-tab {
+      opacity: .75;
+    }
+
+    .game-tab.active {
+      opacity: 1;
+      outline: 2px solid rgba(255,255,255,.22);
+    }
+
+    .game-section {
+      display: none;
+    }
+
+    .game-section.active {
+      display: block;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 14px 0;
+    }
+
+    .stat-box {
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-box strong {
+      display: block;
+      font-size: 22px;
+      margin-top: 4px;
+    }
+
+    .cookie-button {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+      position: relative;
+      border-radius: 30px;
+    }
+
+    .cookie-button img {
+      width: 210px;
+      height: 210px;
+      object-fit: contain;
+      filter: drop-shadow(0 18px 30px rgba(0,0,0,.55));
+      transition: transform .08s ease, filter .15s ease;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .cookie-button:active img {
+      transform: scale(.92) rotate(-3deg);
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,.6)) brightness(1.08);
+    }
+
+    .cookie-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 18px;
+    }
+
+    .floating-plus {
+      position: fixed;
+      pointer-events: none;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 4px 12px rgba(0,0,0,.65);
+      animation: flyUp .8s ease forwards;
+      z-index: 9999;
+    }
+
+    @keyframes flyUp {
+      from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+
+      to {
+        opacity: 0;
+        transform: translateY(-55px) scale(1.25);
+      }
+    }
+
+    .upgrade-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .upgrade-card {
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .upgrade-card h3 {
+      margin: 0 0 6px;
+    }
+
+    .upgrade-card p {
+      color: var(--muted);
+      margin: 4px 0 12px;
+    }
+
+    .upgrade-card .btn {
+      width: 100%;
+    }
+
+    .maze-layout {
+      display: grid;
+      grid-template-columns: 1fr 240px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .maze-box {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    #mazeCanvas {
+      width: 100%;
+      max-width: 640px;
+      aspect-ratio: 1 / 1;
+      border-radius: 18px;
+      background: rgba(0,0,0,.3);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      image-rendering: pixelated;
+    }
+
+    .maze-panel {
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .maze-panel p {
+      color: var(--muted);
+      margin: 8px 0;
+    }
+
+    .mobile-controls {
+      display: none;
+      grid-template-columns: repeat(3, 64px);
+      gap: 8px;
+      justify-content: center;
+      margin-top: 14px;
+    }
+
+    .mobile-controls button {
+      min-height: 52px;
+    }
+
+    .mobile-controls .wide {
+      grid-column: span 3;
+    }
+
+    .danger-text {
+      color: #ffb4b4;
+      font-weight: 800;
+    }
+
+    .success-text {
+      color: #baffc9;
+      font-weight: 800;
+    }
+
+    @media (max-width: 850px) {
+      .stat-grid,
+      .upgrade-grid,
+      .maze-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .mobile-controls {
+        display: grid;
+      }
+
+      .cookie-button img {
+        width: 185px;
+        height: 185px;
+      }
+    }
   </style>
 </head>
+
 <body>
   <header class="topbar">
-    <div class="brand"><img src="../images/susenka.png" alt="logo" class="brand-logo"><span class="brand-name">Sušenka <b>Web</b></span></div>
+    <div class="brand">
+      <img src="../images/susenka.png" alt="logo" class="brand-logo">
+      <span class="brand-name">Sušenka <b>Web</b></span>
+    </div>
+
     <nav class="nav">
-      <a href="../index.html">Domů</a><a href="hra.html" class="active">Hra</a><a href="novinky.html">Novinky</a><a href="chat.html">Chat</a><a href="team.html">Team</a><a href="kontakt.html">Kontakt</a><a href="faq.html">FAQ</a><a href="admin.html">Admin</a><a href="login.html">Login</a>
+      <a href="../index.html">Domů</a>
+      <a href="hra.html" class="active">Hra</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="novinky.html">Novinky</a>
+      <a href="chat.html">Chat</a>
+      <a href="team.html">Team</a>
+      <a href="kontakt.html">Kontakt</a>
+      <a href="faq.html">FAQ</a>
+      <a href="admin.html">Admin</a>
+      <a href="login.html">Login</a>
     </nav>
   </header>
+
   <main class="container">
     <section class="card hero animate-pop">
-      <h1>Sušenka Hry 🍪</h1><p>Dvě hry na jednom místě: klikání na sušenku a random bludiště proti SBP.</p>
-      <div class="game-tabs"><button class="btn primary game-tab active" id="tab-clicker" onclick="showGame('clicker')">Cookie Clicker</button><button class="btn game-tab" id="tab-maze" onclick="showGame('maze')">Bludiště SBP</button></div>
-    </section>
-    <section id="game-clicker" class="card game-card game-section active">
-      <h2>Cookie Clicker 🍪</h2><p class="hint">Klikej na sušenku, kupuj upgrady a farmi co nejvíc sušenek.</p>
-      <div class="stat-grid"><div class="stat-box">Sušenky<strong id="cookiesCount">0</strong></div><div class="stat-box">Za klik<strong id="perClickCount">1</strong></div><div class="stat-box">Za sekundu<strong id="cpsCount">0</strong></div></div>
-      <div class="cookie-wrap"><button class="cookie-button" id="cookieButton" aria-label="Klikni na sušenku"><img src="../images/susenka.png" alt="Sušenka" id="cookieImage"></button></div>
-      <div class="upgrade-grid">
-        <article class="upgrade-card"><h3>👆 Kurzory</h3><p>Automaticky klikají pomalu za tebe.</p><button class="btn" onclick="buyUpgrade('cursor')" id="buy-cursor">Koupit</button></article>
-        <article class="upgrade-card"><h3>⛏️ Lopata</h3><p>Přidá sílu ke každému kliknutí.</p><button class="btn" onclick="buyUpgrade('shovel')" id="buy-shovel">Koupit</button></article>
-        <article class="upgrade-card"><h3>⚙️ Mašina</h3><p>Vyrábí sušenky automaticky.</p><button class="btn" onclick="buyUpgrade('machine')" id="buy-machine">Koupit</button></article>
-        <article class="upgrade-card"><h3>🏭 Továrna</h3><p>Velká automatická výroba sušenek.</p><button class="btn" onclick="buyUpgrade('factory')" id="buy-factory">Koupit</button></article>
+      <h1>Sušenka Hry 🍪</h1>
+      <p>Dvě hry na jednom místě: klikání na sušenku a random bludiště proti SBP.</p>
+
+      <div class="game-tabs">
+        <button class="btn primary game-tab active" id="tab-clicker" onclick="showGame('clicker')">Cookie Clicker</button>
+        <button class="btn game-tab" id="tab-maze" onclick="showGame('maze')">Bludiště SBP</button>
       </div>
-      <div class="controls"><button class="btn" onclick="saveClicker()">Uložit</button><button class="btn" onclick="resetClicker()">Reset</button></div>
     </section>
+
+    <section id="game-clicker" class="card game-card game-section active">
+      <h2>Cookie Clicker 🍪</h2>
+      <p class="hint">Klikej na sušenku, kupuj upgrady a farmi co nejvíc sušenek.</p>
+
+      <div class="stat-grid">
+        <div class="stat-box">Sušenky<strong id="cookiesCount">0</strong></div>
+        <div class="stat-box">Celkem<strong id="totalCookiesCount">0</strong></div>
+        <div class="stat-box">Za sekundu<strong id="cpsCount">0</strong></div>
+      </div>
+
+      <div class="cookie-wrap">
+        <button class="cookie-button" id="cookieButton" aria-label="Klikni na sušenku">
+          <img src="../images/susenka.png" alt="Sušenka" id="cookieImage">
+        </button>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-box">Za klik<strong id="perClickCount">1</strong></div>
+        <div class="stat-box">Leaderboard sync<strong id="syncStatus">Neaktivní</strong></div>
+        <div class="stat-box">Login<strong id="loginStatus">Kontroluju...</strong></div>
+      </div>
+
+      <div class="upgrade-grid">
+        <article class="upgrade-card">
+          <h3>👆 Kurzory</h3>
+          <p>Automaticky klikají pomalu za tebe.</p>
+          <button class="btn" onclick="buyUpgrade('cursor')" id="buy-cursor">Koupit</button>
+        </article>
+
+        <article class="upgrade-card">
+          <h3>⛏️ Lopata</h3>
+          <p>Přidá sílu ke každému kliknutí.</p>
+          <button class="btn" onclick="buyUpgrade('shovel')" id="buy-shovel">Koupit</button>
+        </article>
+
+        <article class="upgrade-card">
+          <h3>⚙️ Mašina</h3>
+          <p>Vyrábí sušenky automaticky.</p>
+          <button class="btn" onclick="buyUpgrade('machine')" id="buy-machine">Koupit</button>
+        </article>
+
+        <article class="upgrade-card">
+          <h3>🏭 Továrna</h3>
+          <p>Velká automatická výroba sušenek.</p>
+          <button class="btn" onclick="buyUpgrade('factory')" id="buy-factory">Koupit</button>
+        </article>
+      </div>
+
+      <div class="controls">
+        <button class="btn" onclick="manualSaveClicker()">Uložit</button>
+        <button class="btn" onclick="syncGameScore(false, true)">Sync leaderboard</button>
+        <button class="btn" onclick="resetClicker()">Reset</button>
+      </div>
+    </section>
+
     <section id="game-maze" class="card game-section">
-      <h2>Bludiště: Cookie vs SBP 🗝️⚔️</h2><p class="hint">Ovládání: <b>WASD</b> nebo <b>šipky</b>. Útok mečem: <b>mezerník</b> nebo <b>E</b>. Každý restart vytvoří nové bludiště.</p>
-      <div class="maze-layout"><div><div class="maze-box"><canvas id="mazeCanvas" width="640" height="640"></canvas></div><div class="mobile-controls"><span></span><button class="btn" onclick="movePlayer(0, -1)">⬆️</button><span></span><button class="btn" onclick="movePlayer(-1, 0)">⬅️</button><button class="btn primary" onclick="attack()">⚔️</button><button class="btn" onclick="movePlayer(1, 0)">➡️</button><span></span><button class="btn" onclick="movePlayer(0, 1)">⬇️</button><span></span><button class="btn wide" onclick="restartMaze()">Restart bludiště</button></div></div>
-      <aside class="maze-panel"><h3>Stav hry</h3><p>Životy: <b id="mazeLives">3</b></p><p>Klíče: <b id="mazeKeys">0 / 0</b></p><p>SBP poraženo: <b id="mazeKills">0 / 0</b></p><p id="mazeMessage" class="hint">Najdi klíče a dávej bacha na SBP.</p><div class="controls"><button class="btn" onclick="restartMaze()">Restart</button></div></aside></div>
+      <h2>Bludiště: Cookie vs SBP 🗝️⚔️</h2>
+      <p class="hint">Ovládání: <b>WASD</b> nebo <b>šipky</b>. Útok mečem: <b>mezerník</b> nebo <b>E</b>. Každý restart vytvoří nové bludiště.</p>
+
+      <div class="maze-layout">
+        <div>
+          <div class="maze-box">
+            <canvas id="mazeCanvas" width="640" height="640"></canvas>
+          </div>
+
+          <div class="mobile-controls">
+            <span></span>
+            <button class="btn" onclick="movePlayer(0, -1)">⬆️</button>
+            <span></span>
+            <button class="btn" onclick="movePlayer(-1, 0)">⬅️</button>
+            <button class="btn primary" onclick="attack()">⚔️</button>
+            <button class="btn" onclick="movePlayer(1, 0)">➡️</button>
+            <span></span>
+            <button class="btn" onclick="movePlayer(0, 1)">⬇️</button>
+            <span></span>
+            <button class="btn wide" onclick="restartMaze()">Restart bludiště</button>
+          </div>
+        </div>
+
+        <aside class="maze-panel">
+          <h3>Stav hry</h3>
+          <p>Životy: <b id="mazeLives">3</b></p>
+          <p>Klíče: <b id="mazeKeys">0 / 0</b></p>
+          <p>SBP poraženo: <b id="mazeKills">0 / 0</b></p>
+          <p id="mazeMessage" class="hint">Najdi klíče a dávej bacha na SBP.</p>
+
+          <div class="controls">
+            <button class="btn" onclick="restartMaze()">Restart</button>
+            <a class="btn" href="leaderboard.html">Leaderboard</a>
+          </div>
+        </aside>
+      </div>
     </section>
   </main>
+
   <footer class="footer">© 2026 Sušenka Web</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../config/app.js"></script>
+
   <script>
     const COOKIE_IMAGE_PATH = "../images/susenka.png";
-    function showGame(name) { document.getElementById("game-clicker").classList.toggle("active", name === "clicker"); document.getElementById("game-maze").classList.toggle("active", name === "maze"); document.getElementById("tab-clicker").classList.toggle("active", name === "clicker"); document.getElementById("tab-maze").classList.toggle("active", name === "maze"); if (name === "maze") setTimeout(drawMaze, 50); }
 
-    const clickerDefault = { cookies: 0, totalCookies: 0, upgrades: { cursor: 0, shovel: 0, machine: 0, factory: 0 } };
-    const upgradeData = { cursor: { name: "Kurzory", baseCost: 25, scaling: 1.22, desc: "0.2/s" }, shovel: { name: "Lopata", baseCost: 60, scaling: 1.28, desc: "+1 za klik" }, machine: { name: "Mašina", baseCost: 250, scaling: 1.32, desc: "4/s" }, factory: { name: "Továrna", baseCost: 1200, scaling: 1.36, desc: "20/s" } };
+    const gameDb = window.SUSENKA?.supabase;
+    const gameCfg = window.SUSENKA?.config;
+
+    const clickerDefault = {
+      cookies: 0,
+      totalCookies: 0,
+      upgrades: {
+        cursor: 0,
+        shovel: 0,
+        machine: 0,
+        factory: 0
+      }
+    };
+
+    const upgradeData = {
+      cursor: {
+        name: "Kurzory",
+        baseCost: 25,
+        scaling: 1.22,
+        desc: "0.2/s"
+      },
+      shovel: {
+        name: "Lopata",
+        baseCost: 60,
+        scaling: 1.28,
+        desc: "+1 za klik"
+      },
+      machine: {
+        name: "Mašina",
+        baseCost: 250,
+        scaling: 1.32,
+        desc: "4/s"
+      },
+      factory: {
+        name: "Továrna",
+        baseCost: 1200,
+        scaling: 1.36,
+        desc: "20/s"
+      }
+    };
+
     let clicker = loadClicker();
-    function loadClicker() { try { const saved = JSON.parse(localStorage.getItem("susenkaClickerV2")); if (!saved) return structuredClone(clickerDefault); return { cookies: Number(saved.cookies) || 0, totalCookies: Number(saved.totalCookies) || 0, upgrades: { cursor: Number(saved.upgrades?.cursor) || 0, shovel: Number(saved.upgrades?.shovel) || 0, machine: Number(saved.upgrades?.machine) || 0, factory: Number(saved.upgrades?.factory) || 0 } }; } catch { return structuredClone(clickerDefault); } }
-    function saveClicker() { localStorage.setItem("susenkaClickerV2", JSON.stringify(clicker)); showToast("Uloženo 🍪"); }
-    function getPerClick() { return 1 + clicker.upgrades.shovel; }
-    function getCps() { return clicker.upgrades.cursor * 0.2 + clicker.upgrades.machine * 4 + clicker.upgrades.factory * 20; }
-    function getUpgradeCost(type) { const data = upgradeData[type]; const owned = clicker.upgrades[type]; return Math.floor(data.baseCost * Math.pow(data.scaling, owned)); }
-    function formatNumber(num) { if (num >= 1000000000) return (num / 1000000000).toFixed(1) + "B"; if (num >= 1000000) return (num / 1000000).toFixed(1) + "M"; if (num >= 1000) return (num / 1000).toFixed(1) + "K"; return Math.floor(num).toString(); }
-    function updateClickerUI() { document.getElementById("cookiesCount").textContent = formatNumber(clicker.cookies); document.getElementById("perClickCount").textContent = formatNumber(getPerClick()); document.getElementById("cpsCount").textContent = getCps().toFixed(1); for (const type of Object.keys(upgradeData)) { const btn = document.getElementById("buy-" + type); const cost = getUpgradeCost(type); const owned = clicker.upgrades[type]; btn.textContent = `${upgradeData[type].name} | ${cost} 🍪 | máš ${owned} | ${upgradeData[type].desc}`; btn.disabled = clicker.cookies < cost; btn.style.opacity = clicker.cookies < cost ? ".55" : "1"; } }
-    function addCookies(amount, event) { clicker.cookies += amount; clicker.totalCookies += amount; updateClickerUI(); if (event) spawnFloatingPlus(event.clientX, event.clientY, "+" + formatNumber(amount)); }
-    function spawnFloatingPlus(x, y, text) { const plus = document.createElement("div"); plus.className = "floating-plus"; plus.textContent = text + " 🍪"; plus.style.left = x + "px"; plus.style.top = y + "px"; document.body.appendChild(plus); setTimeout(() => plus.remove(), 850); }
-    function buyUpgrade(type) { const cost = getUpgradeCost(type); if (clicker.cookies < cost) return showToast("Nemáš dost sušenek."); clicker.cookies -= cost; clicker.upgrades[type]++; updateClickerUI(); saveClicker(); }
-    function resetClicker() { if (!confirm("Fakt chceš resetovat Cookie Clicker?")) return; clicker = structuredClone(clickerDefault); saveClicker(); updateClickerUI(); }
-    document.getElementById("cookieButton").addEventListener("click", event => addCookies(getPerClick(), event));
-    setInterval(() => { const cps = getCps(); if (cps > 0) { clicker.cookies += cps / 10; clicker.totalCookies += cps / 10; updateClickerUI(); } }, 100);
-    setInterval(saveClicker, 5000); updateClickerUI();
+    let scoreSyncTimeout = null;
+    let currentGameUser = null;
+
+    function showGame(name) {
+      document.getElementById("game-clicker").classList.toggle("active", name === "clicker");
+      document.getElementById("game-maze").classList.toggle("active", name === "maze");
+      document.getElementById("tab-clicker").classList.toggle("active", name === "clicker");
+      document.getElementById("tab-maze").classList.toggle("active", name === "maze");
+
+      if (name === "maze") {
+        setTimeout(drawMaze, 50);
+      }
+    }
+
+    function setSyncStatus(text) {
+      const element = document.getElementById("syncStatus");
+
+      if (element) {
+        element.textContent = text;
+      }
+    }
+
+    function setLoginStatus(text) {
+      const element = document.getElementById("loginStatus");
+
+      if (element) {
+        element.textContent = text;
+      }
+    }
+
+    async function checkGameLogin() {
+      if (!gameDb) {
+        setLoginStatus("DB off");
+        return;
+      }
+
+      currentGameUser = await window.SUSENKA.getCurrentUser();
+
+      if (!currentGameUser) {
+        setLoginStatus("Nepřihlášen");
+        setSyncStatus("Login nutný");
+        return;
+      }
+
+      setLoginStatus("Přihlášen");
+      setSyncStatus("Připraveno");
+      syncGameScore(false, false);
+    }
+
+    function scheduleScoreSync() {
+      clearTimeout(scoreSyncTimeout);
+
+      scoreSyncTimeout = setTimeout(() => {
+        syncGameScore(false, false);
+      }, 900);
+    }
+
+    async function syncGameScore(addMazeWin = false, manual = false) {
+      if (!gameDb || !gameCfg) {
+        setSyncStatus("DB off");
+        return;
+      }
+
+      try {
+        const user = currentGameUser || await window.SUSENKA.getCurrentUser();
+
+        if (!user) {
+          setSyncStatus("Login nutný");
+
+          if (manual) {
+            showToast("Nejdřív se přihlas.");
+          }
+
+          return;
+        }
+
+        currentGameUser = user;
+
+        const profile = await window.SUSENKA.getCurrentProfile();
+        const username = profile?.username || user.email?.split("@")[0] || "user";
+
+        const cookieTotal = Math.floor(Number(clicker.totalCookies) || 0);
+
+        const { error } = await gameDb.rpc("sync_game_score", {
+          p_username: username,
+          p_cookie_total: cookieTotal,
+          p_cookie_best: cookieTotal,
+          p_add_maze_win: addMazeWin ? 1 : 0
+        });
+
+        if (error) {
+          console.warn("Leaderboard sync error:", error);
+          setSyncStatus("Chyba");
+
+          if (manual) {
+            showToast("Sync chyba: " + error.message);
+          }
+
+          return;
+        }
+
+        setSyncStatus("Uloženo");
+
+        if (manual) {
+          showToast("Leaderboard sync hotový 🏆");
+        }
+
+        if (addMazeWin) {
+          showToast("Win uložen do leaderboardu 🏆");
+        }
+      } catch (error) {
+        console.warn("Leaderboard sync failed:", error);
+        setSyncStatus("Chyba");
+      }
+    }
+
+    function loadClicker() {
+      try {
+        const saved = JSON.parse(localStorage.getItem("susenkaClickerV2"));
+
+        if (!saved) {
+          return structuredClone(clickerDefault);
+        }
+
+        return {
+          cookies: Number(saved.cookies) || 0,
+          totalCookies: Number(saved.totalCookies) || 0,
+          upgrades: {
+            cursor: Number(saved.upgrades?.cursor) || 0,
+            shovel: Number(saved.upgrades?.shovel) || 0,
+            machine: Number(saved.upgrades?.machine) || 0,
+            factory: Number(saved.upgrades?.factory) || 0
+          }
+        };
+      } catch {
+        return structuredClone(clickerDefault);
+      }
+    }
+
+    function saveClicker() {
+      localStorage.setItem("susenkaClickerV2", JSON.stringify(clicker));
+      scheduleScoreSync();
+    }
+
+    function manualSaveClicker() {
+      saveClicker();
+      showToast("Uloženo 🍪");
+    }
+
+    function getPerClick() {
+      return 1 + clicker.upgrades.shovel;
+    }
+
+    function getCps() {
+      return clicker.upgrades.cursor * 0.2 + clicker.upgrades.machine * 4 + clicker.upgrades.factory * 20;
+    }
+
+    function getUpgradeCost(type) {
+      const data = upgradeData[type];
+      const owned = clicker.upgrades[type];
+
+      return Math.floor(data.baseCost * Math.pow(data.scaling, owned));
+    }
+
+    function formatNumber(num) {
+      num = Number(num) || 0;
+
+      if (num >= 1000000000000) return (num / 1000000000000).toFixed(1) + "T";
+      if (num >= 1000000000) return (num / 1000000000).toFixed(1) + "B";
+      if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+      if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+
+      return Math.floor(num).toString();
+    }
+
+    function updateClickerUI() {
+      document.getElementById("cookiesCount").textContent = formatNumber(clicker.cookies);
+      document.getElementById("totalCookiesCount").textContent = formatNumber(clicker.totalCookies);
+      document.getElementById("perClickCount").textContent = formatNumber(getPerClick());
+      document.getElementById("cpsCount").textContent = getCps().toFixed(1);
+
+      for (const type of Object.keys(upgradeData)) {
+        const btn = document.getElementById("buy-" + type);
+        const cost = getUpgradeCost(type);
+        const owned = clicker.upgrades[type];
+
+        btn.textContent = `${upgradeData[type].name} | ${cost} 🍪 | máš ${owned} | ${upgradeData[type].desc}`;
+        btn.disabled = clicker.cookies < cost;
+        btn.style.opacity = clicker.cookies < cost ? ".55" : "1";
+      }
+    }
+
+    function addCookies(amount, event) {
+      clicker.cookies += amount;
+      clicker.totalCookies += amount;
+
+      updateClickerUI();
+      scheduleScoreSync();
+
+      if (event) {
+        spawnFloatingPlus(event.clientX, event.clientY, "+" + formatNumber(amount));
+      }
+    }
+
+    function spawnFloatingPlus(x, y, text) {
+      const plus = document.createElement("div");
+
+      plus.className = "floating-plus";
+      plus.textContent = text + " 🍪";
+      plus.style.left = x + "px";
+      plus.style.top = y + "px";
+
+      document.body.appendChild(plus);
+
+      setTimeout(() => plus.remove(), 850);
+    }
+
+    function buyUpgrade(type) {
+      const cost = getUpgradeCost(type);
+
+      if (clicker.cookies < cost) {
+        return showToast("Nemáš dost sušenek.");
+      }
+
+      clicker.cookies -= cost;
+      clicker.upgrades[type]++;
+
+      updateClickerUI();
+      saveClicker();
+      showToast("Upgrade koupen.");
+    }
+
+    function resetClicker() {
+      if (!confirm("Fakt chceš resetovat Cookie Clicker?")) return;
+
+      clicker = structuredClone(clickerDefault);
+
+      saveClicker();
+      updateClickerUI();
+      showToast("Reset hotový.");
+    }
+
+    document.getElementById("cookieButton").addEventListener("click", event => {
+      addCookies(getPerClick(), event);
+    });
+
+    setInterval(() => {
+      const cps = getCps();
+
+      if (cps > 0) {
+        clicker.cookies += cps / 10;
+        clicker.totalCookies += cps / 10;
+        updateClickerUI();
+      }
+    }, 100);
+
+    setInterval(() => {
+      saveClicker();
+    }, 5000);
 
     const canvas = document.getElementById("mazeCanvas");
     const ctx = canvas.getContext("2d");
     const tileSize = 40;
+
     const cookieImg = new Image();
     cookieImg.src = COOKIE_IMAGE_PATH;
     cookieImg.onload = () => drawMaze();
+
     let mazeMap = [];
-    const MAZE_SIZE = 16, KEY_COUNT = 4, ENEMY_COUNT = 3;
-    let maze, swordFlash = null, lastAttack = 0, lastEnemyMove = 0;
-    function shuffleArray(array) { return array.map(value => ({ value, sort: Math.random() })).sort((a, b) => a.sort - b.sort).map(item => item.value); }
-    function countOpenNeighbors(grid, x, y) { const dirs = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }]; return dirs.filter(dir => { const nx = x + dir.x, ny = y + dir.y; if (ny < 0 || ny >= MAZE_SIZE || nx < 0 || nx >= MAZE_SIZE) return false; return grid[ny][nx] !== "#"; }).length; }
-    function generateMazeMap() { const grid = Array.from({ length: MAZE_SIZE }, () => Array(MAZE_SIZE).fill("#")); const start = { x: 1, y: 1 }, exit = { x: 14, y: 14 }; const visited = new Set(), stack = [start]; grid[start.y][start.x] = "."; visited.add(`${start.x},${start.y}`); const dirs = [{ x: 2, y: 0 }, { x: -2, y: 0 }, { x: 0, y: 2 }, { x: 0, y: -2 }]; while (stack.length > 0) { const current = stack[stack.length - 1]; const options = shuffleArray(dirs).map(dir => ({ x: current.x + dir.x, y: current.y + dir.y, wallX: current.x + dir.x / 2, wallY: current.y + dir.y / 2 })).filter(pos => pos.x > 0 && pos.x < MAZE_SIZE - 1 && pos.y > 0 && pos.y < MAZE_SIZE - 1 && !visited.has(`${pos.x},${pos.y}`)); if (options.length === 0) { stack.pop(); continue; } const next = options[0]; grid[next.wallY][next.wallX] = "."; grid[next.y][next.x] = "."; visited.add(`${next.x},${next.y}`); stack.push({ x: next.x, y: next.y }); } grid[13][13] = "."; grid[13][14] = "."; grid[14][14] = "."; for (let i = 0; i < 24; i++) { const x = Math.floor(Math.random() * 14) + 1, y = Math.floor(Math.random() * 14) + 1; if (grid[y][x] === "#" && countOpenNeighbors(grid, x, y) >= 2) grid[y][x] = "."; } let openTiles = []; for (let y = 1; y < MAZE_SIZE - 1; y++) { for (let x = 1; x < MAZE_SIZE - 1; x++) { if (grid[y][x] !== ".") continue; const ds = Math.abs(x - start.x) + Math.abs(y - start.y); const de = Math.abs(x - exit.x) + Math.abs(y - exit.y); if (ds <= 4 || de <= 2) continue; openTiles.push({ x, y }); } } openTiles = shuffleArray(openTiles); for (let i = 0; i < KEY_COUNT; i++) { const tile = openTiles.pop(); if (tile) grid[tile.y][tile.x] = "K"; } for (let i = 0; i < ENEMY_COUNT; i++) { const tile = openTiles.pop(); if (tile) grid[tile.y][tile.x] = "S"; } grid[start.y][start.x] = "P"; grid[exit.y][exit.x] = "E"; return grid.map(row => row.join("")); }
-    function restartMaze() { mazeMap = generateMazeMap(); const keys = [], enemies = []; let player = { x: 1, y: 1, dirX: 1, dirY: 0, lives: 3 }, exit = { x: 14, y: 14 }; for (let y = 0; y < mazeMap.length; y++) { for (let x = 0; x < mazeMap[y].length; x++) { const cell = mazeMap[y][x]; if (cell === "P") player = { x, y, dirX: 1, dirY: 0, lives: 3 }; if (cell === "K") keys.push({ x, y, collected: false }); if (cell === "S") enemies.push({ x, y, alive: true }); if (cell === "E") exit = { x, y }; } } maze = { player, keys, enemies, exit, kills: 0, won: false, gameOver: false, message: "Najdi klíče a zabij SBP." }; updateMazeUI(); drawMaze(); }
-    function isWall(x, y) { if (y < 0 || y >= mazeMap.length || x < 0 || x >= mazeMap[0].length) return true; return mazeMap[y][x] === "#"; }
-    function enemyAt(x, y) { return maze.enemies.find(enemy => enemy.alive && enemy.x === x && enemy.y === y); }
-    function movePlayer(dx, dy) { if (maze.gameOver || maze.won) return; maze.player.dirX = dx; maze.player.dirY = dy; const nx = maze.player.x + dx, ny = maze.player.y + dy; if (isWall(nx, ny)) { maze.message = "Au, zeď."; updateMazeUI(); drawMaze(); return; } const enemy = enemyAt(nx, ny); if (enemy) { damagePlayer("SBP tě trefil. Použij meč!"); drawMaze(); return; } maze.player.x = nx; maze.player.y = ny; collectKey(); checkExit(); updateMazeUI(); drawMaze(); }
-    function collectKey() { const key = maze.keys.find(k => !k.collected && k.x === maze.player.x && k.y === maze.player.y); if (key) { key.collected = true; maze.message = "Sebral jsi klíč 🗝️"; } }
-    function collectedKeysCount() { return maze.keys.filter(k => k.collected).length; }
-    function aliveEnemiesCount() { return maze.enemies.filter(e => e.alive).length; }
-    function checkExit() { const atExit = maze.player.x === maze.exit.x && maze.player.y === maze.exit.y; const hasAllKeys = collectedKeysCount() === maze.keys.length; const killedAll = aliveEnemiesCount() === 0; if (!atExit) return; if (!hasAllKeys && !killedAll) return maze.message = "Dveře jsou zamčené. Chybí klíče a SBP."; if (!hasAllKeys) return maze.message = "Dveře jsou zamčené. Chybí klíče."; if (!killedAll) return maze.message = "Nejdřív poraz všechny SBP."; maze.won = true; maze.message = "Vyhrál jsi! Cookie přežil 🎉"; showToast("Bludiště vyhráno 🎉"); }
-    function attack() { if (maze.gameOver || maze.won) return; const now = Date.now(); if (now - lastAttack < 350) return; lastAttack = now; const tx = maze.player.x + maze.player.dirX, ty = maze.player.y + maze.player.dirY; swordFlash = { x: tx, y: ty, time: 8 }; const enemy = enemyAt(tx, ty); if (enemy) { enemy.alive = false; maze.kills++; maze.message = "SBP poražen ⚔️"; checkExit(); } else { maze.message = "Máchl jsi mečem."; } updateMazeUI(); drawMaze(); }
-    function damagePlayer(message) { maze.player.lives--; maze.message = message; if (maze.player.lives <= 0) { maze.gameOver = true; maze.message = "Prohrál jsi. SBP tě dostal 💀"; } updateMazeUI(); }
-    function moveEnemies() { if (!maze || maze.gameOver || maze.won) return; const now = Date.now(); if (now - lastEnemyMove < 650) return; lastEnemyMove = now; const dirs = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }]; for (const enemy of maze.enemies) { if (!enemy.alive) continue; const distance = Math.abs(enemy.x - maze.player.x) + Math.abs(enemy.y - maze.player.y); let options = dirs.map(dir => ({ x: enemy.x + dir.x, y: enemy.y + dir.y })).filter(pos => !isWall(pos.x, pos.y) && !enemyAt(pos.x, pos.y) && mazeMap[pos.y][pos.x] !== "E"); if (options.length === 0) continue; if (distance <= 5) options.sort((a, b) => (Math.abs(a.x - maze.player.x) + Math.abs(a.y - maze.player.y)) - (Math.abs(b.x - maze.player.x) + Math.abs(b.y - maze.player.y))); else options = shuffleArray(options); const next = options[0]; if (next.x === maze.player.x && next.y === maze.player.y) { damagePlayer("SBP tě kousnul!"); continue; } enemy.x = next.x; enemy.y = next.y; if (Math.abs(enemy.x - maze.player.x) + Math.abs(enemy.y - maze.player.y) === 0) damagePlayer("SBP tě kousnul!"); } updateMazeUI(); drawMaze(); }
-    function updateMazeUI() { document.getElementById("mazeLives").textContent = maze.player.lives; document.getElementById("mazeKeys").textContent = `${collectedKeysCount()} / ${maze.keys.length}`; document.getElementById("mazeKills").textContent = `${maze.kills} / ${maze.enemies.length}`; const msg = document.getElementById("mazeMessage"); msg.textContent = maze.message; msg.className = "hint"; if (maze.gameOver) msg.className = "danger-text"; if (maze.won) msg.className = "success-text"; }
-    function drawMaze() { if (!maze) return; ctx.clearRect(0, 0, canvas.width, canvas.height); for (let y = 0; y < mazeMap.length; y++) { for (let x = 0; x < mazeMap[y].length; x++) { const cell = mazeMap[y][x], px = x * tileSize, py = y * tileSize; if (cell === "#") { ctx.fillStyle = "rgba(10, 6, 30, .95)"; ctx.fillRect(px, py, tileSize, tileSize); ctx.strokeStyle = "rgba(255,255,255,.08)"; ctx.strokeRect(px, py, tileSize, tileSize); } else { ctx.fillStyle = "rgba(255,255,255,.055)"; ctx.fillRect(px, py, tileSize, tileSize); ctx.strokeStyle = "rgba(255,255,255,.025)"; ctx.strokeRect(px, py, tileSize, tileSize); } } } drawExit(); drawKeys(); drawEnemies(); drawSword(); drawPlayer(); if (swordFlash) { swordFlash.time--; if (swordFlash.time <= 0) swordFlash = null; } }
-    function drawExit() { const px = maze.exit.x * tileSize, py = maze.exit.y * tileSize; const unlocked = collectedKeysCount() === maze.keys.length && aliveEnemiesCount() === 0; ctx.fillStyle = unlocked ? "rgba(120,255,160,.45)" : "rgba(255,220,120,.28)"; ctx.fillRect(px + 6, py + 6, tileSize - 12, tileSize - 12); ctx.font = "24px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(unlocked ? "🚪" : "🔒", px + tileSize / 2, py + tileSize / 2 + 1); }
-    function drawKeys() { ctx.save(); ctx.font = "24px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.globalAlpha = 0.9; for (const key of maze.keys) { if (key.collected) continue; const px = key.x * tileSize, py = key.y * tileSize; ctx.fillStyle = "rgba(255, 220, 120, .45)"; ctx.beginPath(); ctx.arc(px + tileSize / 2, py + tileSize / 2, 15, 0, Math.PI * 2); ctx.fill(); ctx.fillText("🗝️", px + tileSize / 2, py + tileSize / 2); } ctx.restore(); }
-    function drawEnemies() { for (const enemy of maze.enemies) { if (!enemy.alive) continue; const px = enemy.x * tileSize, py = enemy.y * tileSize; ctx.fillStyle = "rgba(255,70,95,.85)"; ctx.beginPath(); ctx.roundRect(px + 5, py + 5, tileSize - 10, tileSize - 10, 9); ctx.fill(); ctx.fillStyle = "#fff"; ctx.font = "bold 13px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("SBP", px + tileSize / 2, py + tileSize / 2); } }
-    function drawPlayer() { const px = maze.player.x * tileSize, py = maze.player.y * tileSize; if (cookieImg.complete && cookieImg.naturalWidth > 0) ctx.drawImage(cookieImg, px + 4, py + 4, tileSize - 8, tileSize - 8); else { ctx.font = "28px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("🍪", px + tileSize / 2, py + tileSize / 2); } const cx = px + tileSize / 2, cy = py + tileSize / 2; ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + maze.player.dirX * 12, cy + maze.player.dirY * 12); ctx.stroke(); }
-    function drawSword() { if (!swordFlash) return; const px = swordFlash.x * tileSize, py = swordFlash.y * tileSize; ctx.fillStyle = "rgba(255,255,255,.25)"; ctx.fillRect(px + 4, py + 4, tileSize - 8, tileSize - 8); ctx.font = "26px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("⚔️", px + tileSize / 2, py + tileSize / 2); }
-    document.addEventListener("keydown", event => { const key = event.key.toLowerCase(); if (["arrowup", "arrowdown", "arrowleft", "arrowright", " ", "w", "a", "s", "d", "e"].includes(key)) event.preventDefault(); if (key === "arrowup" || key === "w") movePlayer(0, -1); if (key === "arrowdown" || key === "s") movePlayer(0, 1); if (key === "arrowleft" || key === "a") movePlayer(-1, 0); if (key === "arrowright" || key === "d") movePlayer(1, 0); if (key === " " || key === "e") attack(); });
-    setInterval(() => { moveEnemies(); drawMaze(); }, 120);
+    const MAZE_SIZE = 16;
+    const KEY_COUNT = 4;
+    const ENEMY_COUNT = 3;
+
+    let maze;
+    let swordFlash = null;
+    let lastAttack = 0;
+    let lastEnemyMove = 0;
+
+    function shuffleArray(array) {
+      return array
+        .map(value => ({ value, sort: Math.random() }))
+        .sort((a, b) => a.sort - b.sort)
+        .map(item => item.value);
+    }
+
+    function countOpenNeighbors(grid, x, y) {
+      const dirs = [
+        { x: 1, y: 0 },
+        { x: -1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: -1 }
+      ];
+
+      return dirs.filter(dir => {
+        const nx = x + dir.x;
+        const ny = y + dir.y;
+
+        if (ny < 0 || ny >= MAZE_SIZE || nx < 0 || nx >= MAZE_SIZE) {
+          return false;
+        }
+
+        return grid[ny][nx] !== "#";
+      }).length;
+    }
+
+    function generateMazeMap() {
+      const grid = Array.from({ length: MAZE_SIZE }, () => Array(MAZE_SIZE).fill("#"));
+      const start = { x: 1, y: 1 };
+      const exit = { x: 14, y: 14 };
+
+      const visited = new Set();
+      const stack = [start];
+
+      grid[start.y][start.x] = ".";
+      visited.add(`${start.x},${start.y}`);
+
+      const dirs = [
+        { x: 2, y: 0 },
+        { x: -2, y: 0 },
+        { x: 0, y: 2 },
+        { x: 0, y: -2 }
+      ];
+
+      while (stack.length > 0) {
+        const current = stack[stack.length - 1];
+
+        const options = shuffleArray(dirs)
+          .map(dir => ({
+            x: current.x + dir.x,
+            y: current.y + dir.y,
+            wallX: current.x + dir.x / 2,
+            wallY: current.y + dir.y / 2
+          }))
+          .filter(pos =>
+            pos.x > 0 &&
+            pos.x < MAZE_SIZE - 1 &&
+            pos.y > 0 &&
+            pos.y < MAZE_SIZE - 1 &&
+            !visited.has(`${pos.x},${pos.y}`)
+          );
+
+        if (options.length === 0) {
+          stack.pop();
+          continue;
+        }
+
+        const next = options[0];
+
+        grid[next.wallY][next.wallX] = ".";
+        grid[next.y][next.x] = ".";
+
+        visited.add(`${next.x},${next.y}`);
+        stack.push({ x: next.x, y: next.y });
+      }
+
+      grid[13][13] = ".";
+      grid[13][14] = ".";
+      grid[14][14] = ".";
+
+      for (let i = 0; i < 24; i++) {
+        const x = Math.floor(Math.random() * 14) + 1;
+        const y = Math.floor(Math.random() * 14) + 1;
+
+        if (grid[y][x] === "#" && countOpenNeighbors(grid, x, y) >= 2) {
+          grid[y][x] = ".";
+        }
+      }
+
+      let openTiles = [];
+
+      for (let y = 1; y < MAZE_SIZE - 1; y++) {
+        for (let x = 1; x < MAZE_SIZE - 1; x++) {
+          if (grid[y][x] !== ".") continue;
+
+          const ds = Math.abs(x - start.x) + Math.abs(y - start.y);
+          const de = Math.abs(x - exit.x) + Math.abs(y - exit.y);
+
+          if (ds <= 4 || de <= 2) continue;
+
+          openTiles.push({ x, y });
+        }
+      }
+
+      openTiles = shuffleArray(openTiles);
+
+      for (let i = 0; i < KEY_COUNT; i++) {
+        const tile = openTiles.pop();
+
+        if (tile) {
+          grid[tile.y][tile.x] = "K";
+        }
+      }
+
+      for (let i = 0; i < ENEMY_COUNT; i++) {
+        const tile = openTiles.pop();
+
+        if (tile) {
+          grid[tile.y][tile.x] = "S";
+        }
+      }
+
+      grid[start.y][start.x] = "P";
+      grid[exit.y][exit.x] = "E";
+
+      return grid.map(row => row.join(""));
+    }
+
+    function restartMaze() {
+      mazeMap = generateMazeMap();
+
+      const keys = [];
+      const enemies = [];
+
+      let player = {
+        x: 1,
+        y: 1,
+        dirX: 1,
+        dirY: 0,
+        lives: 3
+      };
+
+      let exit = {
+        x: 14,
+        y: 14
+      };
+
+      for (let y = 0; y < mazeMap.length; y++) {
+        for (let x = 0; x < mazeMap[y].length; x++) {
+          const cell = mazeMap[y][x];
+
+          if (cell === "P") {
+            player = {
+              x,
+              y,
+              dirX: 1,
+              dirY: 0,
+              lives: 3
+            };
+          }
+
+          if (cell === "K") {
+            keys.push({
+              x,
+              y,
+              collected: false
+            });
+          }
+
+          if (cell === "S") {
+            enemies.push({
+              x,
+              y,
+              alive: true
+            });
+          }
+
+          if (cell === "E") {
+            exit = {
+              x,
+              y
+            };
+          }
+        }
+      }
+
+      maze = {
+        player,
+        keys,
+        enemies,
+        exit,
+        kills: 0,
+        won: false,
+        gameOver: false,
+        winSynced: false,
+        message: "Najdi klíče a zabij SBP."
+      };
+
+      updateMazeUI();
+      drawMaze();
+    }
+
+    function isWall(x, y) {
+      if (y < 0 || y >= mazeMap.length || x < 0 || x >= mazeMap[0].length) {
+        return true;
+      }
+
+      return mazeMap[y][x] === "#";
+    }
+
+    function enemyAt(x, y) {
+      return maze.enemies.find(enemy => enemy.alive && enemy.x === x && enemy.y === y);
+    }
+
+    function movePlayer(dx, dy) {
+      if (maze.gameOver || maze.won) return;
+
+      maze.player.dirX = dx;
+      maze.player.dirY = dy;
+
+      const nx = maze.player.x + dx;
+      const ny = maze.player.y + dy;
+
+      if (isWall(nx, ny)) {
+        maze.message = "Au, zeď.";
+        updateMazeUI();
+        drawMaze();
+        return;
+      }
+
+      const enemy = enemyAt(nx, ny);
+
+      if (enemy) {
+        damagePlayer("SBP tě trefil. Použij meč!");
+        drawMaze();
+        return;
+      }
+
+      maze.player.x = nx;
+      maze.player.y = ny;
+
+      collectKey();
+      checkExit();
+      updateMazeUI();
+      drawMaze();
+    }
+
+    function collectKey() {
+      const key = maze.keys.find(k => !k.collected && k.x === maze.player.x && k.y === maze.player.y);
+
+      if (key) {
+        key.collected = true;
+        maze.message = "Sebral jsi klíč 🗝️";
+      }
+    }
+
+    function collectedKeysCount() {
+      return maze.keys.filter(k => k.collected).length;
+    }
+
+    function aliveEnemiesCount() {
+      return maze.enemies.filter(e => e.alive).length;
+    }
+
+    function checkExit() {
+      const atExit = maze.player.x === maze.exit.x && maze.player.y === maze.exit.y;
+      const hasAllKeys = collectedKeysCount() === maze.keys.length;
+      const killedAll = aliveEnemiesCount() === 0;
+
+      if (!atExit) return;
+
+      if (!hasAllKeys && !killedAll) {
+        maze.message = "Dveře jsou zamčené. Chybí klíče a SBP.";
+        return;
+      }
+
+      if (!hasAllKeys) {
+        maze.message = "Dveře jsou zamčené. Chybí klíče.";
+        return;
+      }
+
+      if (!killedAll) {
+        maze.message = "Nejdřív poraz všechny SBP.";
+        return;
+      }
+
+      maze.won = true;
+      maze.message = "Vyhrál jsi! Cookie přežil 🎉";
+      showToast("Bludiště vyhráno 🎉");
+
+      if (!maze.winSynced) {
+        maze.winSynced = true;
+        syncGameScore(true, false);
+      }
+    }
+
+    function attack() {
+      if (maze.gameOver || maze.won) return;
+
+      const now = Date.now();
+
+      if (now - lastAttack < 350) return;
+
+      lastAttack = now;
+
+      const tx = maze.player.x + maze.player.dirX;
+      const ty = maze.player.y + maze.player.dirY;
+
+      swordFlash = {
+        x: tx,
+        y: ty,
+        time: 8
+      };
+
+      const enemy = enemyAt(tx, ty);
+
+      if (enemy) {
+        enemy.alive = false;
+        maze.kills++;
+        maze.message = "SBP poražen ⚔️";
+        checkExit();
+      } else {
+        maze.message = "Máchl jsi mečem.";
+      }
+
+      updateMazeUI();
+      drawMaze();
+    }
+
+    function damagePlayer(message) {
+      maze.player.lives--;
+      maze.message = message;
+
+      if (maze.player.lives <= 0) {
+        maze.gameOver = true;
+        maze.message = "Prohrál jsi. SBP tě dostal 💀";
+      }
+
+      updateMazeUI();
+    }
+
+    function moveEnemies() {
+      if (!maze || maze.gameOver || maze.won) return;
+
+      const now = Date.now();
+
+      if (now - lastEnemyMove < 650) return;
+
+      lastEnemyMove = now;
+
+      const dirs = [
+        { x: 1, y: 0 },
+        { x: -1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: -1 }
+      ];
+
+      for (const enemy of maze.enemies) {
+        if (!enemy.alive) continue;
+
+        const distance = Math.abs(enemy.x - maze.player.x) + Math.abs(enemy.y - maze.player.y);
+
+        let options = dirs
+          .map(dir => ({
+            x: enemy.x + dir.x,
+            y: enemy.y + dir.y
+          }))
+          .filter(pos =>
+            !isWall(pos.x, pos.y) &&
+            !enemyAt(pos.x, pos.y) &&
+            mazeMap[pos.y][pos.x] !== "E"
+          );
+
+        if (options.length === 0) continue;
+
+        if (distance <= 5) {
+          options.sort((a, b) =>
+            (Math.abs(a.x - maze.player.x) + Math.abs(a.y - maze.player.y)) -
+            (Math.abs(b.x - maze.player.x) + Math.abs(b.y - maze.player.y))
+          );
+        } else {
+          options = shuffleArray(options);
+        }
+
+        const next = options[0];
+
+        if (next.x === maze.player.x && next.y === maze.player.y) {
+          damagePlayer("SBP tě kousnul!");
+          continue;
+        }
+
+        enemy.x = next.x;
+        enemy.y = next.y;
+
+        if (Math.abs(enemy.x - maze.player.x) + Math.abs(enemy.y - maze.player.y) === 0) {
+          damagePlayer("SBP tě kousnul!");
+        }
+      }
+
+      updateMazeUI();
+      drawMaze();
+    }
+
+    function updateMazeUI() {
+      document.getElementById("mazeLives").textContent = maze.player.lives;
+      document.getElementById("mazeKeys").textContent = `${collectedKeysCount()} / ${maze.keys.length}`;
+      document.getElementById("mazeKills").textContent = `${maze.kills} / ${maze.enemies.length}`;
+
+      const msg = document.getElementById("mazeMessage");
+      msg.textContent = maze.message;
+      msg.className = "hint";
+
+      if (maze.gameOver) {
+        msg.className = "danger-text";
+      }
+
+      if (maze.won) {
+        msg.className = "success-text";
+      }
+    }
+
+    function drawMaze() {
+      if (!maze) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let y = 0; y < mazeMap.length; y++) {
+        for (let x = 0; x < mazeMap[y].length; x++) {
+          const cell = mazeMap[y][x];
+          const px = x * tileSize;
+          const py = y * tileSize;
+
+          if (cell === "#") {
+            ctx.fillStyle = "rgba(10, 6, 30, .95)";
+            ctx.fillRect(px, py, tileSize, tileSize);
+            ctx.strokeStyle = "rgba(255,255,255,.08)";
+            ctx.strokeRect(px, py, tileSize, tileSize);
+          } else {
+            ctx.fillStyle = "rgba(255,255,255,.055)";
+            ctx.fillRect(px, py, tileSize, tileSize);
+            ctx.strokeStyle = "rgba(255,255,255,.025)";
+            ctx.strokeRect(px, py, tileSize, tileSize);
+          }
+        }
+      }
+
+      drawExit();
+      drawKeys();
+      drawEnemies();
+      drawSword();
+      drawPlayer();
+
+      if (swordFlash) {
+        swordFlash.time--;
+
+        if (swordFlash.time <= 0) {
+          swordFlash = null;
+        }
+      }
+    }
+
+    function drawExit() {
+      const px = maze.exit.x * tileSize;
+      const py = maze.exit.y * tileSize;
+      const unlocked = collectedKeysCount() === maze.keys.length && aliveEnemiesCount() === 0;
+
+      ctx.fillStyle = unlocked ? "rgba(120,255,160,.45)" : "rgba(255,220,120,.28)";
+      ctx.fillRect(px + 6, py + 6, tileSize - 12, tileSize - 12);
+      ctx.font = "24px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(unlocked ? "🚪" : "🔒", px + tileSize / 2, py + tileSize / 2 + 1);
+    }
+
+    function drawKeys() {
+      ctx.save();
+
+      ctx.font = "24px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.globalAlpha = 0.9;
+
+      for (const key of maze.keys) {
+        if (key.collected) continue;
+
+        const px = key.x * tileSize;
+        const py = key.y * tileSize;
+
+        ctx.fillStyle = "rgba(255, 220, 120, .45)";
+        ctx.beginPath();
+        ctx.arc(px + tileSize / 2, py + tileSize / 2, 15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillText("🗝️", px + tileSize / 2, py + tileSize / 2);
+      }
+
+      ctx.restore();
+    }
+
+    function drawEnemies() {
+      for (const enemy of maze.enemies) {
+        if (!enemy.alive) continue;
+
+        const px = enemy.x * tileSize;
+        const py = enemy.y * tileSize;
+
+        ctx.fillStyle = "rgba(255,70,95,.85)";
+        ctx.beginPath();
+        ctx.roundRect(px + 5, py + 5, tileSize - 10, tileSize - 10, 9);
+        ctx.fill();
+
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 13px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("SBP", px + tileSize / 2, py + tileSize / 2);
+      }
+    }
+
+    function drawPlayer() {
+      const px = maze.player.x * tileSize;
+      const py = maze.player.y * tileSize;
+
+      if (cookieImg.complete && cookieImg.naturalWidth > 0) {
+        ctx.drawImage(cookieImg, px + 4, py + 4, tileSize - 8, tileSize - 8);
+      } else {
+        ctx.font = "28px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("🍪", px + tileSize / 2, py + tileSize / 2);
+      }
+
+      const cx = px + tileSize / 2;
+      const cy = py + tileSize / 2;
+
+      ctx.strokeStyle = "rgba(255,255,255,.75)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + maze.player.dirX * 12, cy + maze.player.dirY * 12);
+      ctx.stroke();
+    }
+
+    function drawSword() {
+      if (!swordFlash) return;
+
+      const px = swordFlash.x * tileSize;
+      const py = swordFlash.y * tileSize;
+
+      ctx.fillStyle = "rgba(255,255,255,.25)";
+      ctx.fillRect(px + 4, py + 4, tileSize - 8, tileSize - 8);
+      ctx.font = "26px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("⚔️", px + tileSize / 2, py + tileSize / 2);
+    }
+
+    document.addEventListener("keydown", event => {
+      const key = event.key.toLowerCase();
+
+      if (["arrowup", "arrowdown", "arrowleft", "arrowright", " ", "w", "a", "s", "d", "e"].includes(key)) {
+        event.preventDefault();
+      }
+
+      if (key === "arrowup" || key === "w") movePlayer(0, -1);
+      if (key === "arrowdown" || key === "s") movePlayer(0, 1);
+      if (key === "arrowleft" || key === "a") movePlayer(-1, 0);
+      if (key === "arrowright" || key === "d") movePlayer(1, 0);
+      if (key === " " || key === "e") attack();
+    });
+
+    setInterval(() => {
+      moveEnemies();
+      drawMaze();
+    }, 120);
+
+    function showToast(text) {
+      const old = document.querySelector(".toast-message");
+
+      if (old) {
+        old.remove();
+      }
+
+      const toast = document.createElement("div");
+      toast.className = "toast-message";
+      toast.textContent = text;
+      toast.style.position = "fixed";
+      toast.style.right = "14px";
+      toast.style.top = "14px";
+      toast.style.zIndex = "99999";
+      toast.style.padding = "12px 16px";
+      toast.style.borderRadius = "14px";
+      toast.style.background = "rgba(108,92,231,.92)";
+      toast.style.color = "#fff";
+      toast.style.fontWeight = "800";
+      toast.style.boxShadow = "0 14px 35px rgba(0,0,0,.45)";
+
+      document.body.appendChild(toast);
+
+      setTimeout(() => toast.remove(), 2200);
+    }
+
+    updateClickerUI();
     restartMaze();
-    function showToast(text) { const old = document.querySelector(".toast-message"); if (old) old.remove(); const toast = document.createElement("div"); toast.className = "toast-message"; toast.textContent = text; toast.style.position = "fixed"; toast.style.right = "14px"; toast.style.top = "14px"; toast.style.zIndex = "99999"; toast.style.padding = "12px 16px"; toast.style.borderRadius = "14px"; toast.style.background = "rgba(108,92,231,.92)"; toast.style.color = "#fff"; toast.style.fontWeight = "800"; toast.style.boxShadow = "0 14px 35px rgba(0,0,0,.45)"; document.body.appendChild(toast); setTimeout(() => toast.remove(), 2200); }
+    checkGameLogin();
   </script>
 </body>
 </html>
