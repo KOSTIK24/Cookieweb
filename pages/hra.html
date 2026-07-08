@@ -264,12 +264,11 @@
         </button>
       </div>
 
-      <div class="stat-grid">
-        <div class="stat-box">Za klik<strong id="perClickCount">1</strong></div>
-        <div class="stat-box">Leaderboard sync<strong id="syncStatus">Neaktivní</strong></div>
-        <div class="stat-box">Login<strong id="loginStatus">Kontroluju...</strong></div>
-      </div>
-
+   <div class="stat-grid">
+  <div class="stat-box">Za klik<strong id="perClickCount">1</strong></div>
+  <div class="stat-box">Offline gain<strong id="offlineGainCount">0</strong></div>
+  <div class="stat-box">Leaderboard sync<strong id="syncStatus">Neaktivní</strong></div>
+</div>
       <div class="upgrade-grid">
         <article class="upgrade-card">
           <h3>👆 Kurzory</h3>
@@ -608,6 +607,12 @@
       document.getElementById("totalCookiesCount").textContent = formatNumber(clicker.totalCookies);
       document.getElementById("perClickCount").textContent = formatNumber(getPerClick());
       document.getElementById("cpsCount").textContent = getCps().toFixed(1);
+
+      const offlineGainEl = document.getElementById("offlineGainCount");
+
+if (offlineGainEl) {
+  offlineGainEl.textContent = formatNumber(clicker.offlineGain || 0);
+}
 
       for (const type of Object.keys(upgradeData)) {
         const btn = document.getElementById("buy-" + type);
