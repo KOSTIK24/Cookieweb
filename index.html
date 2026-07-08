@@ -1,12 +1,12 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Sušenka Web</title>
 
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -19,8 +19,12 @@
     <nav class="nav">
       <a href="index.html" class="active">Domů</a>
       <a href="pages/hra.html">Hra</a>
+      <a href="pages/leaderboard.html">Leaderboard</a>
       <a href="pages/novinky.html">Novinky</a>
       <a href="pages/chat.html">Chat</a>
+      <a href="pages/team.html">Team</a>
+      <a href="pages/kontakt.html">Kontakt</a>
+      <a href="pages/faq.html">FAQ</a>
       <a href="pages/admin.html">Admin</a>
       <a href="pages/login.html">Login</a>
     </nav>
@@ -29,13 +33,15 @@
   <main class="container">
     <section class="card hero animate-pop">
       <h1>Vítej na Sušenka Webu 🍪</h1>
+
       <p>
         Herní, komunitní a totálně sušenkový web. Najdeš tu hry, chat, novinky,
-        eventy a admin panel.
+        eventy, leaderboard a admin panel.
       </p>
 
       <div class="controls">
         <a class="btn primary" href="pages/hra.html">Hrát hry</a>
+        <a class="btn" href="pages/leaderboard.html">Leaderboard</a>
         <a class="btn" href="pages/chat.html">Otevřít chat</a>
         <a class="btn ghost" href="pages/login.html">Přihlásit se</a>
       </div>
@@ -44,34 +50,62 @@
     <section class="grid">
       <article class="card floaty">
         <h2>🍪 Cookie Clicker</h2>
+
         <p>
           Klikej na sušenku, kupuj upgrady a farmi co nejvíc cookies.
         </p>
+
         <a class="btn" href="pages/hra.html">Spustit</a>
       </article>
 
       <article class="card floaty">
         <h2>🗝️ Bludiště SBP</h2>
+
         <p>
           Cookie hledá klíče, má meč a musí přežít proti SBP.
         </p>
+
         <a class="btn" href="pages/hra.html">Hrát</a>
       </article>
 
       <article class="card floaty">
-        <h2>💬 Chat</h2>
+        <h2>🏆 Leaderboard</h2>
+
         <p>
-          Společný chat přes Supabase. Psát můžou přihlášení uživatelé.
+          Žebříček nejlepších hráčů podle cookies a SBP maze winů.
         </p>
+
+        <a class="btn" href="pages/leaderboard.html">Zobrazit</a>
+      </article>
+
+      <article class="card floaty">
+        <h2>💬 Chat</h2>
+
+        <p>
+          Společný chat přes databázi. Psát můžou přihlášení uživatelé.
+        </p>
+
         <a class="btn" href="pages/chat.html">Jít na chat</a>
       </article>
 
       <article class="card floaty">
         <h2>📢 Novinky</h2>
+
         <p>
           Admin může přidávat news a eventy pro komunitu.
         </p>
+
         <a class="btn" href="pages/novinky.html">Zobrazit</a>
+      </article>
+
+      <article class="card floaty">
+        <h2>👥 Team</h2>
+
+        <p>
+          Přehled lidí, kteří se starají o Sušenka Web.
+        </p>
+
+        <a class="btn" href="pages/team.html">Team</a>
       </article>
     </section>
 
@@ -81,22 +115,49 @@
       <div class="three-grid">
         <article class="panel-box">
           <h3>🎮 Hrát</h3>
+
           <p class="hint">
             Cookie Clicker a bludiště jsou přímo na stránce Hra.
           </p>
         </article>
 
         <article class="panel-box">
+          <h3>🏆 Soutěžit</h3>
+
+          <p class="hint">
+            Leaderboard ukazuje nejlepší hráče podle cookies a maze winů.
+          </p>
+        </article>
+
+        <article class="panel-box">
           <h3>👥 Komunita</h3>
+
           <p class="hint">
             Přihlas se a můžeš psát do chatu.
           </p>
         </article>
 
         <article class="panel-box">
-          <h3>👑 Admin věci</h3>
+          <h3>📢 Eventy</h3>
+
           <p class="hint">
-            Admin může přidávat novinky, eventy a mazat nevhodný chat.
+            Admin může přidávat news a eventy.
+          </p>
+        </article>
+
+        <article class="panel-box">
+          <h3>👑 Admin věci</h3>
+
+          <p class="hint">
+            Admin může spravovat novinky, uživatele, team, FAQ, kontakt a chat.
+          </p>
+        </article>
+
+        <article class="panel-box">
+          <h3>🟢 Online status</h3>
+
+          <p class="hint">
+            Web sleduje online návštěvníky a admin je vidí v admin panelu.
           </p>
         </article>
       </div>
@@ -104,9 +165,9 @@
 
     <section class="card">
       <h2>Nejnovější news / eventy 📢</h2>
+
       <p class="hint">
-        Tady se zobrazí poslední příspěvky ze Supabase. Když databáze ještě nejede,
-        uvidíš jen náhradní text.
+        Tady se zobrazí poslední příspěvky z databáze.
       </p>
 
       <div id="latestPosts" class="post-grid">
@@ -135,9 +196,9 @@
       if (!susenka || !susenka.supabase) {
         latestPostsEl.innerHTML = `
           <article class="post-card news">
-            <small><span class="badge">INFO</span> Supabase není připojený</small>
+            <small><span class="badge">INFO</span> Databáze není připojená</small>
             <h2>Web je připravený</h2>
-            <p>Jakmile nastavíš Supabase, tady se začnou zobrazovat news a eventy.</p>
+            <p>Jakmile nastavíš databázi, tady se začnou zobrazovat news a eventy.</p>
           </article>
         `;
         return;
@@ -154,9 +215,9 @@
 
         latestPostsEl.innerHTML = `
           <article class="post-card news">
-            <small><span class="badge">ERROR</span> Supabase</small>
+            <small><span class="badge">ERROR</span> Databáze</small>
             <h2>Novinky se nepodařilo načíst</h2>
-            <p>Zkontroluj tabulku site_posts a RLS policies v Supabase.</p>
+            <p>Zkontroluj tabulku site_posts a RLS policies v databázi.</p>
           </article>
         `;
         return;
@@ -197,5 +258,7 @@
 
     loadLatestPosts();
   </script>
+
+  <script src="config/global-widgets.js"></script>
 </body>
 </html>
