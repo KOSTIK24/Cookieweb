@@ -8,41 +8,51 @@
   <link rel="stylesheet" href="../style.css">
 
   <style>
-    .chat-messages {
-      height: 420px;
+    .chat-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .chat-box {
+      min-height: 340px;
+      max-height: 520px;
       overflow-y: auto;
-      background: rgba(0,0,0,.20);
-      border: 1px solid rgba(255,255,255,.09);
+      padding: 14px;
       border-radius: 16px;
-      padding: 12px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.18);
     }
 
     .chat-message {
       background: rgba(255,255,255,.07);
       border: 1px solid rgba(255,255,255,.08);
       border-radius: 14px;
-      padding: 10px 12px;
+      padding: 12px;
       margin-bottom: 10px;
-      word-break: break-word;
-      animation: pop .18s ease;
     }
 
-    .chat-message strong {
-      display: block;
-      margin-bottom: 4px;
+    .chat-message h3 {
+      margin: 0 0 5px;
+      font-size: 16px;
+    }
+
+    .chat-message p {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
     .chat-message small {
       opacity: .65;
-      font-size: 11px;
-      float: right;
+      display: block;
+      margin-bottom: 5px;
     }
 
     .chat-form {
       display: grid;
       grid-template-columns: 1fr auto;
       gap: 10px;
-      margin-top: 12px;
     }
 
     .chat-form input {
@@ -56,7 +66,6 @@
 
     .status {
       color: var(--muted);
-      margin-top: 10px;
     }
 
     .danger {
@@ -69,7 +78,7 @@
       font-weight: 800;
     }
 
-    @media (max-width: 850px) {
+    @media (max-width: 700px) {
       .chat-form {
         grid-template-columns: 1fr;
       }
@@ -87,6 +96,7 @@
     <nav class="nav">
       <a href="../index.html">Domů</a>
       <a href="hra.html">Hra</a>
+      <a href="leaderboard.html">Leaderboard</a>
       <a href="novinky.html">Novinky</a>
       <a href="chat.html" class="active">Chat</a>
       <a href="team.html">Team</a>
@@ -100,21 +110,24 @@
   <main class="container">
     <section class="card hero animate-pop">
       <h1>Sušenka Chat 💬</h1>
-      <p>Společný chat pro přihlášené uživatele.</p>
-      <p id="userInfo" class="status">Kontroluju login...</p>
+      <p>Piš si s ostatními členy komunity. Psát můžou přihlášení uživatelé.</p>
+      <p id="chatStatus" class="status">Načítám chat...</p>
     </section>
 
-    <section class="card">
-      <div id="chatMessages" class="chat-messages">
-        <p class="status">Načítám...</p>
+    <section class="card chat-layout">
+      <div id="chatBox" class="chat-box">
+        <p class="status">Načítám zprávy...</p>
       </div>
 
       <div class="chat-form">
-        <input id="chatInput" maxlength="300" placeholder="Napiš zprávu..." autocomplete="off">
-        <button class="btn primary" id="sendButton" onclick="sendMessage()">Poslat</button>
+        <input id="chatInput" maxlength="300" placeholder="Napiš zprávu...">
+        <button class="btn primary" onclick="sendMessage()">Odeslat</button>
       </div>
 
-      <p id="chatStatus" class="status"></p>
+      <div class="controls">
+        <button class="btn" onclick="loadMessages()">Refresh</button>
+        <a class="btn" href="login.html">Login</a>
+      </div>
     </section>
   </main>
 
@@ -127,202 +140,148 @@
     const db = window.SUSENKA.supabase;
     const cfg = window.SUSENKA.config;
 
-    const chatMessages = document.getElementById("chatMessages");
+    const chatBox = document.getElementById("chatBox");
     const chatInput = document.getElementById("chatInput");
-    const sendButton = document.getElementById("sendButton");
     const chatStatus = document.getElementById("chatStatus");
-    const userInfo = document.getElementById("userInfo");
 
     let currentUser = null;
     let currentProfile = null;
-    let chatChannel = null;
+    let lastSendAt = 0;
 
-    const seenMessageIds = new Set();
-    let lastMessageId = 0;
-    let isLoadingNewMessages = false;
-
-    let lastChatSendAt = 0;
-    const CHAT_COOLDOWN_MS = 1000;
-
-    function setStatus(text, danger = false, success = false) {
+    function setChatStatus(text, danger = false, success = false) {
       chatStatus.textContent = text;
       chatStatus.className = danger ? "status danger" : success ? "status success" : "status";
     }
 
-    function clearEmptyMessage() {
-      const empty = chatMessages.querySelector(".status");
-      if (empty) chatMessages.innerHTML = "";
-    }
-
-    function renderMessage(row) {
-      if (!row || !row.id) return;
-      const id = Number(row.id);
-      if (seenMessageIds.has(id)) return;
-      seenMessageIds.add(id);
-      if (id > lastMessageId) lastMessageId = id;
-      clearEmptyMessage();
-
-      const div = document.createElement("div");
-      div.className = "chat-message";
-      div.innerHTML = `
-        <small>${window.SUSENKA.formatDateCZ(row.created_at)}</small>
-        <strong>${window.SUSENKA.escapeHTML(row.username || "user")}</strong>
-        <div>${window.SUSENKA.escapeHTML(row.message || "")}</div>
-      `;
-      chatMessages.appendChild(div);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
     async function initChat() {
       if (!db) {
-        chatMessages.innerHTML = `<p class="status danger">Databáze není nastavená.</p>`;
-        chatInput.disabled = true;
-        sendButton.disabled = true;
+        setChatStatus("Databáze není nastavená.", true);
+        chatBox.innerHTML = `<p class="status danger">Databáze není nastavená.</p>`;
         return;
       }
 
       currentUser = await window.SUSENKA.getCurrentUser();
-      currentProfile = await window.SUSENKA.getCurrentProfile();
 
-      if (!currentUser) {
-        userInfo.innerHTML = `Nejsi přihlášený. <a href="login.html">Přihlas se tady.</a>`;
-        chatInput.disabled = true;
-        sendButton.disabled = true;
+      if (currentUser) {
+        currentProfile = await window.SUSENKA.getCurrentProfile();
+        setChatStatus(`Přihlášen jako ${currentProfile?.username || currentUser.email}`, false, true);
       } else {
-        userInfo.innerHTML = `Píšeš jako <b>${window.SUSENKA.escapeHTML(currentProfile?.username || currentUser.email)}</b>`;
-        chatInput.disabled = false;
-        sendButton.disabled = false;
+        setChatStatus("Nejsi přihlášený. Můžeš číst, ale pro psaní se přihlas.", false);
       }
 
       await loadMessages();
-      startRealtime();
-      setInterval(loadNewMessages, 3000);
 
-      document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) loadNewMessages();
-      });
+      setInterval(loadMessages, 3000);
+
+      try {
+        db
+          .channel("site-chat-live")
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: cfg.chatTable
+            },
+            () => loadMessages()
+          )
+          .subscribe();
+      } catch (error) {
+        console.warn("Realtime chat neběží, používám polling.", error);
+      }
     }
 
     async function loadMessages() {
+      if (!db) return;
+
       const { data, error } = await db
         .from(cfg.chatTable)
-        .select("id, user_id, username, message, created_at")
+        .select("id, username, message, created_at")
         .order("created_at", { ascending: false })
-        .limit(cfg.maxChatMessages);
+        .limit(cfg.maxChatMessages || 80);
 
       if (error) {
-        chatMessages.innerHTML = `<p class="status danger">Chat se nepodařilo načíst.</p>`;
         console.error(error);
+        chatBox.innerHTML = `<p class="status danger">Chat se nepodařilo načíst.</p>`;
         return;
       }
 
-      chatMessages.innerHTML = "";
-      seenMessageIds.clear();
-      lastMessageId = 0;
-
-      const rows = [...data].reverse();
-      if (rows.length === 0) {
-        chatMessages.innerHTML = `<p class="status">Zatím tu nic není.</p>`;
+      if (!data || data.length === 0) {
+        chatBox.innerHTML = `<p class="status">Chat je zatím prázdný.</p>`;
         return;
       }
 
-      rows.forEach(renderMessage);
-    }
+      const messages = [...data].reverse();
 
-    async function loadNewMessages() {
-      if (!db || isLoadingNewMessages) return;
-      isLoadingNewMessages = true;
+      chatBox.innerHTML = messages.map(msg => `
+        <div class="chat-message">
+          <small>${window.SUSENKA.formatDateCZ(msg.created_at)}</small>
+          <h3>${window.SUSENKA.escapeHTML(msg.username || "user")}</h3>
+          <p>${window.SUSENKA.escapeHTML(msg.message || "")}</p>
+        </div>
+      `).join("");
 
-      try {
-        if (!lastMessageId) {
-          await loadMessages();
-          return;
-        }
-
-        const { data, error } = await db
-          .from(cfg.chatTable)
-          .select("id, user_id, username, message, created_at")
-          .gt("id", lastMessageId)
-          .order("id", { ascending: true })
-          .limit(50);
-
-        if (error) {
-          console.error(error);
-          return;
-        }
-
-        if (data && data.length) data.forEach(renderMessage);
-      } finally {
-        isLoadingNewMessages = false;
-      }
-    }
-
-    function startRealtime() {
-      if (!db || chatChannel) return;
-
-      chatChannel = db
-        .channel("site-chat-live")
-        .on(
-          "postgres_changes",
-          { event: "INSERT", schema: "public", table: cfg.chatTable },
-          payload => {
-            renderMessage(payload.new);
-            setStatus("Chat je online.", false, true);
-          }
-        )
-        .subscribe(status => {
-          if (status === "SUBSCRIBED") setStatus("Chat je online.", false, true);
-          if (status === "CHANNEL_ERROR") setStatus("Realtime nejede, zapnutý je záložní refresh.", true);
-          if (status === "TIMED_OUT") setStatus("Realtime timeout, zapnutý je záložní refresh.", true);
-        });
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     async function sendMessage() {
-      if (!currentUser) return setStatus("Nejdřív se přihlas.", true);
+      if (!db) return setChatStatus("Databáze není nastavená.", true);
 
-      const message = chatInput.value.trim().slice(0, cfg.maxChatLength);
-      if (!message) return setStatus("Zpráva je prázdná.", true);
+      currentUser = currentUser || await window.SUSENKA.getCurrentUser();
 
-      const now = Date.now();
-      const cooldownLeft = CHAT_COOLDOWN_MS - (now - lastChatSendAt);
-      if (cooldownLeft > 0) {
-        return setStatus(`Počkej ještě ${(cooldownLeft / 1000).toFixed(1)}s.`, true);
-      }
-
-      lastChatSendAt = now;
-      const username = currentProfile?.username || currentUser.email?.split("@")[0] || "user";
-
-      chatInput.value = "";
-      chatInput.focus();
-      sendButton.disabled = true;
-      setStatus("Posílám...");
-
-      const { data, error } = await db
-        .from(cfg.chatTable)
-        .insert({ user_id: currentUser.id, username, message })
-        .select("id, user_id, username, message, created_at")
-        .single();
-
-      sendButton.disabled = false;
-
-      if (error) {
-        console.error(error);
-        lastChatSendAt = 0;
-        setStatus("Zpráva se neposlala.", true);
-        chatInput.value = message;
+      if (!currentUser) {
+        setChatStatus("Nejdřív se přihlas.", true);
         return;
       }
 
-      renderMessage(data);
-      setStatus("Odesláno.", false, true);
-      setTimeout(loadNewMessages, 500);
+      const now = Date.now();
+
+      if (now - lastSendAt < 1000) {
+        setChatStatus("Počkej chvilku před další zprávou.", true);
+        return;
+      }
+
+      lastSendAt = now;
+
+      const message = chatInput.value.trim().slice(0, cfg.maxChatLength || 300);
+
+      if (!message) {
+        setChatStatus("Zpráva nesmí být prázdná.", true);
+        return;
+      }
+
+      currentProfile = currentProfile || await window.SUSENKA.getCurrentProfile();
+
+      const username = currentProfile?.username || currentUser.email?.split("@")[0] || "user";
+
+      const { error } = await db
+        .from(cfg.chatTable)
+        .insert({
+          username,
+          message,
+          user_id: currentUser.id
+        });
+
+      if (error) {
+        console.error(error);
+        setChatStatus("Zpráva se nepodařila odeslat.", true);
+        return;
+      }
+
+      chatInput.value = "";
+      setChatStatus("Zpráva odeslána.", false, true);
+      loadMessages();
     }
 
     chatInput.addEventListener("keydown", event => {
-      if (event.key === "Enter") sendMessage();
+      if (event.key === "Enter") {
+        sendMessage();
+      }
     });
 
     initChat();
   </script>
+
+  <script src="../config/global-widgets.js"></script>
 </body>
 </html>
