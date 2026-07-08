@@ -15,6 +15,7 @@ const APP_CONFIG = {
   contactsTable: "contact_messages",
   gamesTable: "games",
   scoresTable: "game_scores",
+  onlineTable: "online_players",
 
   maxChatMessages: 80,
   maxGameChatMessages: 50,
