@@ -103,6 +103,7 @@
     <nav class="nav">
       <a href="../index.html">Domů</a>
       <a href="hra.html">Hra</a>
+      <a href="leaderboard.html">Leaderboard</a>
       <a href="novinky.html">Novinky</a>
       <a href="chat.html">Chat</a>
       <a href="team.html">Team</a>
@@ -153,6 +154,15 @@
         <div class="panel-box">
           <h2>Admin info</h2>
           <p class="status">Tady měníš věci, které se zobrazují na webu.</p>
+
+          <div class="admin-item">
+            <small>Live web status</small>
+            <h3>Online hráči: <span id="onlinePlayersCount" class="mini-badge">...</span></h3>
+
+            <div id="onlinePlayersList">
+              <p class="status">Načítám online hráče...</p>
+            </div>
+          </div>
 
           <div class="controls">
             <button class="btn" onclick="logoutAdmin()">Odhlásit</button>
@@ -299,6 +309,8 @@
       loadContacts();
       loadPosts();
       loadChat();
+      loadOnlineStats();
+      setInterval(loadOnlineStats, 10000);
     }
 
     async function createPost() {
@@ -858,11 +870,68 @@
       loadContacts();
     }
 
+    async function loadOnlineStats() {
+      const countEl = document.getElementById("onlinePlayersCount");
+      const listEl = document.getElementById("onlinePlayersList");
+
+      if (!db) {
+        if (countEl) countEl.textContent = "DB off";
+        if (listEl) listEl.innerHTML = `<p class="status danger">Databáze není nastavená.</p>`;
+        return;
+      }
+
+      const { data: countData, error: countError } = await db.rpc("get_online_players_count");
+
+      if (countError) {
+        console.error(countError);
+
+        if (countEl) {
+          countEl.textContent = "chyba";
+        }
+      } else {
+        if (countEl) {
+          countEl.textContent = Number(countData) || 0;
+        }
+      }
+
+      const { data: onlinePlayers, error: listError } = await db.rpc("get_online_players_list");
+
+      if (listError) {
+        console.error(listError);
+
+        if (listEl) {
+          listEl.innerHTML = `<p class="status danger">Online list se nepodařilo načíst.</p>`;
+        }
+
+        return;
+      }
+
+      if (!onlinePlayers || onlinePlayers.length === 0) {
+        if (listEl) {
+          listEl.innerHTML = `<p class="status">Nikdo není online.</p>`;
+        }
+
+        return;
+      }
+
+      if (listEl) {
+        listEl.innerHTML = onlinePlayers.map(player => `
+          <div class="admin-item">
+            <h3>${window.SUSENKA.escapeHTML(player.username || "guest")}</h3>
+            <p class="hint">${window.SUSENKA.escapeHTML(player.page || "/")}</p>
+            <small>${window.SUSENKA.formatDateCZ(player.last_seen)}</small>
+          </div>
+        `).join("");
+      }
+    }
+
     async function logoutAdmin() {
       await window.SUSENKA.logoutUser();
     }
 
     initAdmin();
   </script>
+
+  <script src="../config/global-widgets.js"></script>
 </body>
 </html>
