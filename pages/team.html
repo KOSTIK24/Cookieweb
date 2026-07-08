@@ -10,56 +10,39 @@
   <style>
     .team-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 14px;
-      margin-top: 18px;
     }
 
-    .member-card {
+    .team-card {
       background: rgba(0,0,0,.18);
       border: 1px solid rgba(255,255,255,.08);
       border-radius: 16px;
-      padding: 18px;
+      padding: 16px;
       text-align: center;
-      box-shadow: var(--shadow);
     }
 
-    .member-avatar {
-      width: 72px;
-      height: 72px;
-      border-radius: 18px;
-      object-fit: cover;
-      margin-bottom: 10px;
-      box-shadow: 0 10px 25px rgba(0,0,0,.35);
-    }
-
-    .member-card h2 {
-      margin: 6px 0;
-      font-size: 20px;
-    }
-
-    .member-card p {
-      color: var(--muted);
-      margin: 0;
-      font-weight: 800;
-    }
-
-    .discord-box {
-      text-align: center;
+    .team-avatar {
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      margin: 0 auto 10px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,.1);
+      font-size: 32px;
     }
 
     .status {
       color: var(--muted);
-      text-align: center;
     }
 
-    @media (max-width: 900px) {
-      .team-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
+    .danger {
+      color: #ffb4b4;
+      font-weight: 800;
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 850px) {
       .team-grid {
         grid-template-columns: 1fr;
       }
@@ -77,9 +60,12 @@
     <nav class="nav">
       <a href="../index.html">Domů</a>
       <a href="hra.html">Hra</a>
+      <a href="leaderboard.html">Leaderboard</a>
       <a href="novinky.html">Novinky</a>
       <a href="chat.html">Chat</a>
       <a href="team.html" class="active">Team</a>
+      <a href="kontakt.html">Kontakt</a>
+      <a href="faq.html">FAQ</a>
       <a href="admin.html">Admin</a>
       <a href="login.html">Login</a>
     </nav>
@@ -87,26 +73,15 @@
 
   <main class="container">
     <section class="card hero animate-pop">
-      <h1>Sušenka Admin Team 👑</h1>
-      <p>Oficiální admin team Sušenka serveru.</p>
+      <h1>Sušenka Team 👥</h1>
+      <p>Lidi, kteří se starají o Sušenka Web.</p>
     </section>
 
     <section class="card">
-      <h2>Admin Team</h2>
+      <h2>Team</h2>
 
-      <div id="teamGrid" class="team-grid">
+      <div id="teamList" class="team-grid">
         <p class="status">Načítám team...</p>
-      </div>
-    </section>
-
-    <section class="card discord-box">
-      <h2>Discord server 💬</h2>
-      <p class="hint">Připoj se na oficiální Sušenka Discord server.</p>
-
-      <div class="controls">
-        <a class="btn primary" href="https://discord.gg/Sg6RhsrjJZ" target="_blank" rel="noopener noreferrer">
-          Připojit se na Discord
-        </a>
       </div>
     </section>
   </main>
@@ -119,30 +94,11 @@
   <script>
     const db = window.SUSENKA.supabase;
     const cfg = window.SUSENKA.config;
-    const teamGrid = document.getElementById("teamGrid");
-
-    function fallbackTeam() {
-      return [
-        { name: "susa", role: "Admin" },
-        { name: "susenka 6", role: "Admin" },
-        { name: "susenka 3", role: "Owner" },
-        { name: "susenka 4", role: "Admin" }
-      ];
-    }
-
-    function renderTeam(rows) {
-      teamGrid.innerHTML = rows.map(member => `
-        <article class="member-card">
-          <img src="../images/susenka.png" alt="${window.SUSENKA.escapeHTML(member.name)}" class="member-avatar">
-          <h2>${window.SUSENKA.escapeHTML(member.name)}</h2>
-          <p>${window.SUSENKA.escapeHTML(member.role)}</p>
-        </article>
-      `).join("");
-    }
+    const teamList = document.getElementById("teamList");
 
     async function loadTeam() {
       if (!db) {
-        renderTeam(fallbackTeam());
+        teamList.innerHTML = `<p class="status danger">Databáze není nastavená.</p>`;
         return;
       }
 
@@ -154,19 +110,33 @@
 
       if (error) {
         console.error(error);
-        renderTeam(fallbackTeam());
+        teamList.innerHTML = `<p class="status danger">Team se nepodařilo načíst.</p>`;
         return;
       }
 
       if (!data || data.length === 0) {
-        renderTeam(fallbackTeam());
+        teamList.innerHTML = `
+          <article class="team-card">
+            <div class="team-avatar">🍪</div>
+            <h3>Sušenka Team</h3>
+            <p class="status">Team zatím není nastavený.</p>
+          </article>
+        `;
         return;
       }
 
-      renderTeam(data);
+      teamList.innerHTML = data.map(member => `
+        <article class="team-card">
+          <div class="team-avatar">👑</div>
+          <h3>${window.SUSENKA.escapeHTML(member.name)}</h3>
+          <p class="status">${window.SUSENKA.escapeHTML(member.role)}</p>
+        </article>
+      `).join("");
     }
 
     loadTeam();
   </script>
+
+  <script src="../config/global-widgets.js"></script>
 </body>
 </html>
