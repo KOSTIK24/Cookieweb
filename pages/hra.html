@@ -354,17 +354,18 @@
     const gameDb = window.SUSENKA?.supabase;
     const gameCfg = window.SUSENKA?.config;
 
-    const clickerDefault = {
-      cookies: 0,
-      totalCookies: 0,
-      upgrades: {
-        cursor: 0,
-        shovel: 0,
-        machine: 0,
-        factory: 0
-      }
-    };
-
+  const clickerDefault = {
+  cookies: 0,
+  totalCookies: 0,
+  lastSavedAt: Date.now(),
+  offlineGain: 0,
+  upgrades: {
+    cursor: 0,
+    shovel: 0,
+    machine: 0,
+    factory: 0
+  }
+};
     const upgradeData = {
       cursor: {
         name: "Kurzory",
@@ -510,32 +511,34 @@
     }
 
     function loadClicker() {
-      try {
-        const saved = JSON.parse(localStorage.getItem("susenkaClickerV2"));
+  try {
+    const saved = JSON.parse(localStorage.getItem("susenkaClickerV2"));
 
-        if (!saved) {
-          return structuredClone(clickerDefault);
-        }
+    if (!saved) {
+      return structuredClone(clickerDefault);
+    }
 
-        return {
-          cookies: Number(saved.cookies) || 0,
-          totalCookies: Number(saved.totalCookies) || 0,
-          upgrades: {
-            cursor: Number(saved.upgrades?.cursor) || 0,
-            shovel: Number(saved.upgrades?.shovel) || 0,
-            machine: Number(saved.upgrades?.machine) || 0,
-            factory: Number(saved.upgrades?.factory) || 0
-          }
-        };
-      } catch {
-        return structuredClone(clickerDefault);
+    return {
+      cookies: Number(saved.cookies) || 0,
+      totalCookies: Number(saved.totalCookies) || 0,
+      lastSavedAt: Number(saved.lastSavedAt) || Date.now(),
+      offlineGain: 0,
+      upgrades: {
+        cursor: Number(saved.upgrades?.cursor) || 0,
+        shovel: Number(saved.upgrades?.shovel) || 0,
+        machine: Number(saved.upgrades?.machine) || 0,
+        factory: Number(saved.upgrades?.factory) || 0
       }
-    }
-
-    function saveClicker() {
-      localStorage.setItem("susenkaClickerV2", JSON.stringify(clicker));
-      scheduleScoreSync();
-    }
+    };
+  } catch {
+    return structuredClone(clickerDefault);
+  }
+}
+ function saveClicker() {
+  clicker.lastSavedAt = Date.now();
+  localStorage.setItem("susenkaClickerV2", JSON.stringify(clicker));
+  scheduleScoreSync();
+}
 
     function manualSaveClicker() {
       saveClicker();
@@ -549,6 +552,38 @@
     function getCps() {
       return clicker.upgrades.cursor * 0.2 + clicker.upgrades.machine * 4 + clicker.upgrades.factory * 20;
     }
+
+    function applyOfflineProgress() {
+  const now = Date.now();
+  const lastSavedAt = Number(clicker.lastSavedAt) || now;
+
+  const secondsAway = Math.floor((now - lastSavedAt) / 1000);
+  const maxOfflineSeconds = 60 * 60 * 12;
+
+  const countedSeconds = Math.min(secondsAway, maxOfflineSeconds);
+  const cps = getCps();
+
+  if (countedSeconds < 10 || cps <= 0) {
+    clicker.offlineGain = 0;
+    clicker.lastSavedAt = now;
+    return;
+  }
+
+  const gained = Math.floor(cps * countedSeconds);
+
+  if (gained <= 0) {
+    clicker.offlineGain = 0;
+    clicker.lastSavedAt = now;
+    return;
+  }
+
+  clicker.cookies += gained;
+  clicker.totalCookies += gained;
+  clicker.offlineGain = gained;
+  clicker.lastSavedAt = now;
+
+  showToast(`Offline výdělek: +${formatNumber(gained)} 🍪`);
+}
 
     function getUpgradeCost(type) {
       const data = upgradeData[type];
@@ -628,7 +663,9 @@
     function resetClicker() {
       if (!confirm("Fakt chceš resetovat Cookie Clicker?")) return;
 
-      clicker = structuredClone(clickerDefault);
+     clicker = structuredClone(clickerDefault);
+clicker.lastSavedAt = Date.now();
+clicker.offlineGain = 0;
 
       saveClicker();
       updateClickerUI();
@@ -1273,9 +1310,12 @@
       setTimeout(() => toast.remove(), 2200);
     }
 
-    updateClickerUI();
-    restartMaze();
-    checkGameLogin();
+applyOfflineProgress();
+updateClickerUI();
+saveClicker();
+
+restartMaze();
+checkGameLogin();
   </script>
 </body>
 </html>
