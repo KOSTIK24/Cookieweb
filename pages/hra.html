@@ -293,6 +293,48 @@
           <p>Velká automatická výroba sušenek.</p>
           <button class="btn" onclick="buyUpgrade('factory')" id="buy-factory">Koupit</button>
         </article>
+
+        <article class="upgrade-card">
+  <h3>🧤 Zlatá rukavice</h3>
+  <p>Masivně zvyšuje sílu kliknutí.</p>
+  <button class="btn" onclick="buyUpgrade('goldenGlove')" id="buy-goldenGlove">Koupit</button>
+</article>
+
+<article class="upgrade-card">
+  <h3>👵 Cookie babička</h3>
+  <p>Peče sušenky nonstop.</p>
+  <button class="btn" onclick="buyUpgrade('grandma')" id="buy-grandma">Koupit</button>
+</article>
+
+<article class="upgrade-card">
+  <h3>🥐 Pekárna</h3>
+  <p>Profesionální výroba sušenek.</p>
+  <button class="btn" onclick="buyUpgrade('bakery')" id="buy-bakery">Koupit</button>
+</article>
+
+<article class="upgrade-card">
+  <h3>⛏️ Cookie důl</h3>
+  <p>Těží sušenkovou rudu.</p>
+  <button class="btn" onclick="buyUpgrade('mine')" id="buy-mine">Koupit</button>
+</article>
+
+<article class="upgrade-card">
+  <h3>🧪 Cookie lab</h3>
+  <p>Vědecky vyrábí ultra cookies.</p>
+  <button class="btn" onclick="buyUpgrade('lab')" id="buy-lab">Koupit</button>
+</article>
+
+<article class="upgrade-card">
+  <h3>🌀 Cookie portál</h3>
+  <p>Tahá cookies z jiné dimenze.</p>
+  <button class="btn" onclick="buyUpgrade('portal')" id="buy-portal">Koupit</button>
+</article>
+
+<article class="upgrade-card">
+  <h3>🌌 Cookie God</h3>
+  <p>Totální endgame upgrade.</p>
+  <button class="btn" onclick="buyUpgrade('cookieGod')" id="buy-cookieGod">Koupit</button>
+</article>
       </div>
 
       <div class="controls">
@@ -353,7 +395,7 @@
     const gameDb = window.SUSENKA?.supabase;
     const gameCfg = window.SUSENKA?.config;
 
-  const clickerDefault = {
+const clickerDefault = {
   cookies: 0,
   totalCookies: 0,
   lastSavedAt: Date.now(),
@@ -361,36 +403,95 @@
   upgrades: {
     cursor: 0,
     shovel: 0,
+    goldenGlove: 0,
     machine: 0,
-    factory: 0
+    factory: 0,
+    grandma: 0,
+    bakery: 0,
+    mine: 0,
+    lab: 0,
+    portal: 0,
+    cookieGod: 0
   }
 };
     const upgradeData = {
-      cursor: {
-        name: "Kurzory",
-        baseCost: 25,
-        scaling: 1.22,
-        desc: "0.2/s"
-      },
-      shovel: {
-        name: "Lopata",
-        baseCost: 60,
-        scaling: 1.28,
-        desc: "+1 za klik"
-      },
-      machine: {
-        name: "Mašina",
-        baseCost: 250,
-        scaling: 1.32,
-        desc: "4/s"
-      },
-      factory: {
-        name: "Továrna",
-        baseCost: 1200,
-        scaling: 1.36,
-        desc: "20/s"
-      }
-    };
+  cursor: {
+    name: "Kurzory",
+    baseCost: 25,
+    scaling: 1.22,
+    desc: "0.2/s"
+  },
+
+  shovel: {
+    name: "Lopata",
+    baseCost: 60,
+    scaling: 1.28,
+    desc: "+1 za klik"
+  },
+
+  goldenGlove: {
+    name: "Zlatá rukavice",
+    baseCost: 800,
+    scaling: 1.35,
+    desc: "+10 za klik"
+  },
+
+  machine: {
+    name: "Mašina",
+    baseCost: 250,
+    scaling: 1.32,
+    desc: "4/s"
+  },
+
+  factory: {
+    name: "Továrna",
+    baseCost: 1200,
+    scaling: 1.36,
+    desc: "20/s"
+  },
+
+  grandma: {
+    name: "Cookie babička",
+    baseCost: 3500,
+    scaling: 1.34,
+    desc: "65/s"
+  },
+
+  bakery: {
+    name: "Pekárna",
+    baseCost: 12000,
+    scaling: 1.37,
+    desc: "250/s"
+  },
+
+  mine: {
+    name: "Cookie důl",
+    baseCost: 65000,
+    scaling: 1.39,
+    desc: "1200/s"
+  },
+
+  lab: {
+    name: "Cookie lab",
+    baseCost: 350000,
+    scaling: 1.42,
+    desc: "7000/s"
+  },
+
+  portal: {
+    name: "Cookie portál",
+    baseCost: 2500000,
+    scaling: 1.45,
+    desc: "50000/s"
+  },
+
+  cookieGod: {
+    name: "Cookie God",
+    baseCost: 25000000,
+    scaling: 1.5,
+    desc: "500000/s"
+  }
+};
 
     let clicker = loadClicker();
     let scoreSyncTimeout = null;
@@ -522,13 +623,19 @@
       totalCookies: Number(saved.totalCookies) || 0,
       lastSavedAt: Number(saved.lastSavedAt) || Date.now(),
       offlineGain: 0,
-      upgrades: {
-        cursor: Number(saved.upgrades?.cursor) || 0,
-        shovel: Number(saved.upgrades?.shovel) || 0,
-        machine: Number(saved.upgrades?.machine) || 0,
-        factory: Number(saved.upgrades?.factory) || 0
-      }
-    };
+     upgrades: {
+  cursor: Number(saved.upgrades?.cursor) || 0,
+  shovel: Number(saved.upgrades?.shovel) || 0,
+  goldenGlove: Number(saved.upgrades?.goldenGlove) || 0,
+  machine: Number(saved.upgrades?.machine) || 0,
+  factory: Number(saved.upgrades?.factory) || 0,
+  grandma: Number(saved.upgrades?.grandma) || 0,
+  bakery: Number(saved.upgrades?.bakery) || 0,
+  mine: Number(saved.upgrades?.mine) || 0,
+  lab: Number(saved.upgrades?.lab) || 0,
+  portal: Number(saved.upgrades?.portal) || 0,
+  cookieGod: Number(saved.upgrades?.cookieGod) || 0
+}
   } catch {
     return structuredClone(clickerDefault);
   }
@@ -545,8 +652,26 @@
     }
 
     function getPerClick() {
-      return 1 + clicker.upgrades.shovel;
-    }
+  return (
+    1 +
+    clicker.upgrades.shovel +
+    clicker.upgrades.goldenGlove * 10
+  );
+}
+
+function getCps() {
+  return (
+    clicker.upgrades.cursor * 0.2 +
+    clicker.upgrades.machine * 4 +
+    clicker.upgrades.factory * 20 +
+    clicker.upgrades.grandma * 65 +
+    clicker.upgrades.bakery * 250 +
+    clicker.upgrades.mine * 1200 +
+    clicker.upgrades.lab * 7000 +
+    clicker.upgrades.portal * 50000 +
+    clicker.upgrades.cookieGod * 500000
+  );
+}
 
     function getCps() {
       return clicker.upgrades.cursor * 0.2 + clicker.upgrades.machine * 4 + clicker.upgrades.factory * 20;
