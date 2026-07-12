@@ -215,9 +215,49 @@
       refreshUserInfo();
     }
 
-    async function resendConfirmation() {
-      if (!db) return setStatus("Databáze není nastavená.", true);
+   async function resendConfirmation() {
+  try {
+    if (!db) {
+      console.error("DB missing");
+      return setStatus("Databáze není nastavená.", true);
+    }
 
+    setStatus("Odesílám potvrzovací email...");
+
+    const registerEmail = document.getElementById("registerEmail")?.value.trim();
+    const loginEmail = document.getElementById("loginEmail")?.value.trim();
+    const email = registerEmail || loginEmail;
+
+    if (!email) {
+      return setStatus("Napiš email do registrace nebo loginu.", true);
+    }
+
+    const redirectUrl = getRegisterRedirectUrl();
+
+    console.log("RESEND EMAIL:", email);
+    console.log("RESEND REDIRECT:", redirectUrl);
+
+    const { data, error } = await db.auth.resend({
+      type: "signup",
+      email,
+      options: {
+        emailRedirectTo: redirectUrl
+      }
+    });
+
+    console.log("RESEND DATA:", data);
+    console.log("RESEND ERROR:", error);
+
+    if (error) {
+      return setStatus("Chyba: " + error.message, true);
+    }
+
+    setStatus("Hotovo. Jestli email nepřišel, zkontroluj spam nebo Supabase Auth → Users.");
+  } catch (error) {
+    console.error("RESEND CRASH:", error);
+    setStatus("JS chyba: " + error.message, true);
+  }
+}
       const email =
         document.getElementById("registerEmail").value.trim() ||
         document.getElementById("loginEmail").value.trim();
