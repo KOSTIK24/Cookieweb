@@ -141,7 +141,7 @@
   <script src="../config/app.js"></script>
 
   <script>
-    const db = window.SUSENKA.supabase;
+    const db = window.SUSENKA?.supabase;
     const authStatus = document.getElementById("authStatus");
     const currentUserInfo = document.getElementById("currentUserInfo");
 
@@ -150,173 +150,173 @@
       authStatus.className = danger ? "status danger" : "status success";
     }
 
+    function setCurrentUserInfo(text, danger = false, success = false) {
+      currentUserInfo.textContent = text;
+      currentUserInfo.className = danger ? "status danger" : success ? "status success" : "status";
+    }
+
     function getRegisterRedirectUrl() {
       return window.SUSENKA.getSiteUrl(window.SUSENKA.config.confirmPath);
     }
 
     async function refreshUserInfo() {
-      if (!db) {
-        currentUserInfo.textContent = "Databáze není nastavená.";
-        currentUserInfo.className = "status danger";
-        return;
+      try {
+        if (!db) {
+          setCurrentUserInfo("Databáze není nastavená.", true);
+          return;
+        }
+
+        const user = await window.SUSENKA.getCurrentUser();
+
+        if (!user) {
+          setCurrentUserInfo("Nejsi přihlášený.");
+          return;
+        }
+
+        const profile = await window.SUSENKA.getCurrentProfile();
+        const isAdmin = await window.SUSENKA.isCurrentUserAdmin();
+
+        currentUserInfo.innerHTML = `
+          Přihlášen jako <b>${window.SUSENKA.escapeHTML(profile?.username || user.email)}</b>
+          ${profile?.role ? ` | Role: <b>${window.SUSENKA.escapeHTML(profile.role)}</b>` : ""}
+          ${isAdmin ? " | 👑 Admin" : ""}
+        `;
+
+        currentUserInfo.className = "status success";
+      } catch (error) {
+        console.error("USER INFO ERROR:", error);
+        setCurrentUserInfo("Kontrola přihlášení spadla: " + error.message, true);
       }
-
-      const user = await window.SUSENKA.getCurrentUser();
-
-      if (!user) {
-        currentUserInfo.textContent = "Nejsi přihlášený.";
-        currentUserInfo.className = "status";
-        return;
-      }
-
-      const profile = await window.SUSENKA.getCurrentProfile();
-      const isAdmin = await window.SUSENKA.isCurrentUserAdmin();
-
-      currentUserInfo.innerHTML = `
-        Přihlášen jako <b>${window.SUSENKA.escapeHTML(profile?.username || user.email)}</b>
-        ${profile?.role ? ` | Role: <b>${window.SUSENKA.escapeHTML(profile.role)}</b>` : ""}
-        ${isAdmin ? " | 👑 Admin" : ""}
-      `;
-
-      currentUserInfo.className = "status success";
     }
 
     async function register() {
-      if (!db) return setStatus("Databáze není nastavená.", true);
+      try {
+        if (!db) return setStatus("Databáze není nastavená.", true);
 
-      const username = document.getElementById("registerUsername").value.trim().slice(0, 24);
-      const email = document.getElementById("registerEmail").value.trim();
-      const password = document.getElementById("registerPassword").value;
+        const username = document.getElementById("registerUsername").value.trim().slice(0, 24);
+        const email = document.getElementById("registerEmail").value.trim();
+        const password = document.getElementById("registerPassword").value;
 
-      if (!username || !email || !password) {
-        return setStatus("Vyplň jméno, email a heslo.", true);
-      }
+        if (!username || !email || !password) {
+          return setStatus("Vyplň jméno, email a heslo.", true);
+        }
 
-      const redirectUrl = getRegisterRedirectUrl();
+        const redirectUrl = getRegisterRedirectUrl();
 
-      console.log("Email redirect URL:", redirectUrl);
+        console.log("SIGNUP EMAIL:", email);
+        console.log("SIGNUP REDIRECT:", redirectUrl);
 
-      const { error } = await db.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            username
+        const { data, error } = await db.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              username
+            }
           }
+        });
+
+        console.log("SIGNUP DATA:", data);
+        console.log("SIGNUP ERROR:", error);
+
+        if (error) {
+          return setStatus("Chyba: " + error.message, true);
         }
-      });
 
-      if (error) {
-        return setStatus(error.message, true);
+        setStatus("Registrace odeslána. Zkontroluj email a potvrď účet.");
+        refreshUserInfo();
+      } catch (error) {
+        console.error("REGISTER CRASH:", error);
+        setStatus("JS chyba: " + error.message, true);
       }
-
-      setStatus("Registrace odeslána. Zkontroluj email a potvrď účet.");
-      refreshUserInfo();
     }
 
-   async function resendConfirmation() {
-  try {
-    if (!db) {
-      console.error("DB missing");
-      return setStatus("Databáze není nastavená.", true);
-    }
+    async function resendConfirmation() {
+      try {
+        if (!db) return setStatus("Databáze není nastavená.", true);
 
-    setStatus("Odesílám potvrzovací email...");
+        setStatus("Odesílám potvrzovací email...");
 
-    const registerEmail = document.getElementById("registerEmail")?.value.trim();
-    const loginEmail = document.getElementById("loginEmail")?.value.trim();
-    const email = registerEmail || loginEmail;
+        const registerEmail = document.getElementById("registerEmail").value.trim();
+        const loginEmail = document.getElementById("loginEmail").value.trim();
+        const email = registerEmail || loginEmail;
 
-    if (!email) {
-      return setStatus("Napiš email do registrace nebo loginu.", true);
-    }
-
-    const redirectUrl = getRegisterRedirectUrl();
-
-    console.log("RESEND EMAIL:", email);
-    console.log("RESEND REDIRECT:", redirectUrl);
-
-    const { data, error } = await db.auth.resend({
-      type: "signup",
-      email,
-      options: {
-        emailRedirectTo: redirectUrl
-      }
-    });
-
-    console.log("RESEND DATA:", data);
-    console.log("RESEND ERROR:", error);
-
-    if (error) {
-      return setStatus("Chyba: " + error.message, true);
-    }
-
-    setStatus("Hotovo. Jestli email nepřišel, zkontroluj spam nebo Supabase Auth → Users.");
-  } catch (error) {
-    console.error("RESEND CRASH:", error);
-    setStatus("JS chyba: " + error.message, true);
-  }
-}
-      const email =
-        document.getElementById("registerEmail").value.trim() ||
-        document.getElementById("loginEmail").value.trim();
-
-      if (!email) {
-        return setStatus("Napiš email do registrace nebo loginu.", true);
-      }
-
-      const redirectUrl = getRegisterRedirectUrl();
-
-      console.log("Resend redirect URL:", redirectUrl);
-
-      const { error } = await db.auth.resend({
-        type: "signup",
-        email,
-        options: {
-          emailRedirectTo: redirectUrl
+        if (!email) {
+          return setStatus("Napiš email do registrace nebo loginu.", true);
         }
-      });
 
-      if (error) {
-        return setStatus(error.message, true);
+        const redirectUrl = getRegisterRedirectUrl();
+
+        console.log("RESEND EMAIL:", email);
+        console.log("RESEND REDIRECT:", redirectUrl);
+
+        const { data, error } = await db.auth.resend({
+          type: "signup",
+          email,
+          options: {
+            emailRedirectTo: redirectUrl
+          }
+        });
+
+        console.log("RESEND DATA:", data);
+        console.log("RESEND ERROR:", error);
+
+        if (error) {
+          return setStatus("Chyba: " + error.message, true);
+        }
+
+        setStatus("Hotovo. Zkontroluj email i spam. Když nic nepřijde, účet už může být potvrzený.");
+      } catch (error) {
+        console.error("RESEND CRASH:", error);
+        setStatus("JS chyba: " + error.message, true);
       }
-
-      setStatus("Potvrzovací email byl znovu odeslán. Zkontroluj email i spam.");
     }
 
     async function login() {
-      if (!db) return setStatus("Databáze není nastavená.", true);
+      try {
+        if (!db) return setStatus("Databáze není nastavená.", true);
 
-      const email = document.getElementById("loginEmail").value.trim();
-      const password = document.getElementById("loginPassword").value;
+        const email = document.getElementById("loginEmail").value.trim();
+        const password = document.getElementById("loginPassword").value;
 
-      if (!email || !password) {
-        return setStatus("Vyplň email a heslo.", true);
-      }
-
-      const { error } = await db.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        if (error.message && error.message.toLowerCase().includes("invalid login credentials")) {
-          return setStatus("Wrong credentials. Zkontroluj heslo nebo si znovu pošli potvrzovací email.", true);
+        if (!email || !password) {
+          return setStatus("Vyplň email a heslo.", true);
         }
 
-        return setStatus(error.message, true);
-      }
+        const { error } = await db.auth.signInWithPassword({
+          email,
+          password
+        });
 
-      setStatus("Přihlášeno.");
-      refreshUserInfo();
+        if (error) {
+          if (error.message && error.message.toLowerCase().includes("invalid login credentials")) {
+            return setStatus("Wrong credentials. Zkontroluj heslo nebo si znovu pošli potvrzovací email.", true);
+          }
+
+          return setStatus("Chyba: " + error.message, true);
+        }
+
+        setStatus("Přihlášeno.");
+        refreshUserInfo();
+      } catch (error) {
+        console.error("LOGIN CRASH:", error);
+        setStatus("JS chyba: " + error.message, true);
+      }
     }
 
     async function logout() {
-      await window.SUSENKA.logoutUser();
+      try {
+        await window.SUSENKA.logoutUser();
+      } catch (error) {
+        console.error("LOGOUT CRASH:", error);
+        setStatus("Odhlášení spadlo: " + error.message, true);
+      }
     }
 
     refreshUserInfo();
   </script>
+
+  <script src="../config/global-widgets.js"></script>
 </body>
 </html>
