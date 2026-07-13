@@ -136,7 +136,7 @@
 
     .maze-layout {
       display: grid;
-      grid-template-columns: 1fr 240px;
+      grid-template-columns: 1fr 250px;
       gap: 18px;
       align-items: start;
     }
@@ -197,6 +197,10 @@
       font-weight: 800;
     }
 
+    #nextLevelBtn {
+      display: none;
+    }
+
     @media (max-width: 850px) {
       .stat-grid,
       .upgrade-grid,
@@ -250,7 +254,7 @@
 
     <section id="game-clicker" class="card game-card game-section active">
       <h2>Cookie Clicker 🍪</h2>
-      <p class="hint">Klikej na sušenku, kupuj ⛏️ Zlatou lopatu a ⛏️ Krumpáč.</p>
+      <p class="hint">Klikej na sušenku, kupuj upgrady a farmi co nejvíc sušenek.</p>
 
       <div class="stat-grid">
         <div class="stat-box">Sušenky<strong id="cookiesCount">0</strong></div>
@@ -283,7 +287,7 @@
       <h2>Bludiště: Cookie vs SBP 🗝️⚔️</h2>
       <p class="hint">
         Ovládání: <b>WASD</b> nebo <b>šipky</b>. Útok mečem: <b>mezerník</b> nebo <b>E</b>.
-        Každý win přidá 1 klíč a 1 SBP. Každých 5 výher zvětší mapu. Prohra mapu zmenší.
+        Každý win přidá další level. Prohra resetne bludiště zpět na základ.
       </p>
 
       <div class="maze-layout">
@@ -311,12 +315,14 @@
           <p>Životy: <b id="mazeLives">3</b></p>
           <p>Klíče: <b id="mazeKeys">0 / 0</b></p>
           <p>SBP poraženo: <b id="mazeKills">0 / 0</b></p>
-          <p>Výhry: <b id="mazeWins">0</b></p>
+          <p>Level: <b id="mazeLevel">1</b></p>
+          <p>Výhry v sérii: <b id="mazeWins">0</b></p>
           <p>Velikost mapy: <b id="mazeSizeText">16x16</b></p>
           <p id="mazeMessage" class="hint">Najdi klíče a dávej bacha na SBP.</p>
 
           <div class="controls">
-            <button class="btn" onclick="restartMaze()">Restart</button>
+            <button class="btn primary" id="nextLevelBtn" onclick="nextMazeLevel()">Další level ➜</button>
+            <button class="btn" onclick="restartMaze()">Restart levelu</button>
             <button class="btn" onclick="resetMazeProgress()">Reset progresu</button>
             <a class="btn" href="leaderboard.html">Leaderboard</a>
           </div>
@@ -342,17 +348,46 @@
       lastSavedAt: Date.now(),
       offlineGain: 0,
       upgrades: {
+        cursor: 0,
+        shovel: 0,
         goldenShovel: 0,
-        pickaxe: 0
+        pickaxe: 0,
+        goldenGlove: 0,
+        machine: 0,
+        factory: 0,
+        grandma: 0,
+        bakery: 0,
+        mine: 0,
+        lab: 0,
+        portal: 0,
+        cookieGod: 0
       }
     };
 
     const upgradeData = {
+      cursor: {
+        icon: "👆",
+        name: "Kurzory",
+        text: "Automaticky klikají pomalu za tebe.",
+        baseCost: 25,
+        scaling: 1.22,
+        desc: "0.2/s"
+      },
+
+      shovel: {
+        icon: "⛏️",
+        name: "Lopata",
+        text: "Přidá sílu ke každému kliknutí.",
+        baseCost: 60,
+        scaling: 1.28,
+        desc: "+1 za klik"
+      },
+
       goldenShovel: {
         icon: "⛏️",
         name: "Zlatá lopata",
-        text: "Legendární lopata, která dává víc sušenek za každý klik.",
-        baseCost: 100,
+        text: "Legendární lopata, která dává mega sílu klikání.",
+        baseCost: 500,
         scaling: 1.35,
         desc: "+5 za klik"
       },
@@ -361,9 +396,90 @@
         icon: "⛏️",
         name: "Krumpáč",
         text: "Těží sušenky automaticky i bez klikání.",
-        baseCost: 250,
-        scaling: 1.4,
+        baseCost: 900,
+        scaling: 1.38,
         desc: "3/s"
+      },
+
+      goldenGlove: {
+        icon: "🧤",
+        name: "Zlatá rukavice",
+        text: "Masivně zvyšuje sílu kliknutí.",
+        baseCost: 800,
+        scaling: 1.35,
+        desc: "+10 za klik"
+      },
+
+      machine: {
+        icon: "⚙️",
+        name: "Mašina",
+        text: "Vyrábí sušenky automaticky.",
+        baseCost: 250,
+        scaling: 1.32,
+        desc: "4/s"
+      },
+
+      factory: {
+        icon: "🏭",
+        name: "Továrna",
+        text: "Velká automatická výroba sušenek.",
+        baseCost: 1200,
+        scaling: 1.36,
+        desc: "20/s"
+      },
+
+      grandma: {
+        icon: "👵",
+        name: "Cookie babička",
+        text: "Peče sušenky nonstop.",
+        baseCost: 3500,
+        scaling: 1.34,
+        desc: "65/s"
+      },
+
+      bakery: {
+        icon: "🥐",
+        name: "Pekárna",
+        text: "Profesionální výroba sušenek.",
+        baseCost: 12000,
+        scaling: 1.37,
+        desc: "250/s"
+      },
+
+      mine: {
+        icon: "⛏️",
+        name: "Cookie důl",
+        text: "Těží sušenkovou rudu.",
+        baseCost: 65000,
+        scaling: 1.39,
+        desc: "1200/s"
+      },
+
+      lab: {
+        icon: "🧪",
+        name: "Cookie lab",
+        text: "Vědecky vyrábí ultra cookies.",
+        baseCost: 350000,
+        scaling: 1.42,
+        desc: "7000/s"
+      },
+
+      portal: {
+        icon: "🌀",
+        name: "Cookie portál",
+        text: "Tahá cookies z jiné dimenze.",
+        baseCost: 2500000,
+        scaling: 1.45,
+        desc: "50000/s"
+      },
+
+      cookieGod: {
+        icon: "🌌",
+        name: "Cookie God",
+        text: "Totální endgame upgrade.",
+        baseCost: 25000000,
+        scaling: 1.5,
+        desc: "500000/s"
       }
     };
 
@@ -529,11 +645,27 @@
     }
 
     function getPerClick() {
-      return 1 + (clicker.upgrades.goldenShovel || 0) * 5;
+      return (
+        1 +
+        (clicker.upgrades.shovel || 0) +
+        (clicker.upgrades.goldenShovel || 0) * 5 +
+        (clicker.upgrades.goldenGlove || 0) * 10
+      );
     }
 
     function getCps() {
-      return (clicker.upgrades.pickaxe || 0) * 3;
+      return (
+        (clicker.upgrades.cursor || 0) * 0.2 +
+        (clicker.upgrades.pickaxe || 0) * 3 +
+        (clicker.upgrades.machine || 0) * 4 +
+        (clicker.upgrades.factory || 0) * 20 +
+        (clicker.upgrades.grandma || 0) * 65 +
+        (clicker.upgrades.bakery || 0) * 250 +
+        (clicker.upgrades.mine || 0) * 1200 +
+        (clicker.upgrades.lab || 0) * 7000 +
+        (clicker.upgrades.portal || 0) * 50000 +
+        (clicker.upgrades.cookieGod || 0) * 500000
+      );
     }
 
     function applyOfflineProgress() {
@@ -728,7 +860,7 @@
     let mazeMap = [];
 
     const MAZE_BASE_SIZE = 16;
-    const MAZE_MIN_SIZE = 8;
+    const MAZE_MIN_SIZE = 16;
     const MAZE_MAX_SIZE = 40;
 
     const BASE_KEY_COUNT = 4;
@@ -776,7 +908,21 @@
       mazeSize = mazeProgress.size;
       saveMazeProgress();
       restartMaze();
-      showToast("Progres bludiště resetován.");
+      showToast("Progres bludiště resetován na základ.");
+    }
+
+    function resetMazeProgressAfterDeath() {
+      mazeProgress = {
+        wins: 0,
+        size: MAZE_BASE_SIZE
+      };
+
+      mazeSize = mazeProgress.size;
+      saveMazeProgress();
+    }
+
+    function getMazeLevel() {
+      return mazeProgress.wins + 1;
     }
 
     function getMazeKeyCount() {
@@ -821,7 +967,7 @@
       maze.winProgressApplied = true;
       mazeProgress.wins++;
 
-      let message = `Výhra #${mazeProgress.wins}! Příště +1 klíč a +1 SBP.`;
+      let message = `Level hotový! Další level: ${getMazeLevel()}.`;
 
       if (mazeProgress.wins % 5 === 0) {
         mazeProgress.size = Math.min(MAZE_MAX_SIZE, mazeProgress.size + 1);
@@ -836,17 +982,16 @@
       if (!maze || maze.lossProgressApplied) return;
 
       maze.lossProgressApplied = true;
+      resetMazeProgressAfterDeath();
 
-      const oldSize = mazeProgress.size;
-      mazeProgress.size = Math.max(MAZE_MIN_SIZE, mazeProgress.size - 1);
+      showToast("Prohra. Bludiště se resetovalo na základ: 16x16, 4 klíče, 3 SBP.");
+    }
 
-      saveMazeProgress();
+    function nextMazeLevel() {
+      if (!maze || !maze.won) return;
 
-      if (mazeProgress.size < oldSize) {
-        showToast(`Prohra. Další mapa bude ${mazeProgress.size}x${mazeProgress.size}.`);
-      } else {
-        showToast("Prohra. Mapa už je na minimum.");
-      }
+      restartMaze();
+      showToast(`Level ${getMazeLevel()} spuštěn.`);
     }
 
     function shuffleArray(array) {
@@ -1088,7 +1233,8 @@
         winProgressApplied: false,
         lossProgressApplied: false,
         currentSize: mazeSize,
-        message: `Mapa ${mazeSize}x${mazeSize}. Najdi ${keys.length} klíčů a poraz ${enemies.length} SBP.`
+        currentLevel: getMazeLevel(),
+        message: `Level ${getMazeLevel()}. Mapa ${mazeSize}x${mazeSize}. Najdi ${keys.length} klíčů a poraz ${enemies.length} SBP.`
       };
 
       updateMazeUI();
@@ -1180,7 +1326,7 @@
       }
 
       maze.won = true;
-      maze.message = "Vyhrál jsi! Cookie přežil 🎉";
+      maze.message = "Vyhrál jsi! Cookie utekl 🎉 Klikni na Další level.";
 
       recordMazeWin();
 
@@ -1188,6 +1334,8 @@
         maze.winSynced = true;
         syncGameScore(true, false);
       }
+
+      updateMazeUI();
     }
 
     function attack() {
@@ -1231,7 +1379,7 @@
 
       if (maze.player.lives <= 0) {
         maze.gameOver = true;
-        maze.message = "Prohrál jsi. SBP tě dostal 💀";
+        maze.message = "Prohrál jsi. SBP tě dostal 💀 Progres bludiště je zpět na základ.";
         recordMazeLoss();
       }
 
@@ -1305,8 +1453,14 @@
       document.getElementById("mazeKeys").textContent = `${collectedKeysCount()} / ${maze.keys.length}`;
       document.getElementById("mazeKills").textContent = `${maze.kills} / ${maze.enemies.length}`;
 
+      const mazeLevelEl = document.getElementById("mazeLevel");
       const mazeWinsEl = document.getElementById("mazeWins");
       const mazeSizeTextEl = document.getElementById("mazeSizeText");
+      const nextLevelBtn = document.getElementById("nextLevelBtn");
+
+      if (mazeLevelEl) {
+        mazeLevelEl.textContent = maze.currentLevel || getMazeLevel();
+      }
 
       if (mazeWinsEl) {
         mazeWinsEl.textContent = mazeProgress.wins;
@@ -1314,6 +1468,10 @@
 
       if (mazeSizeTextEl) {
         mazeSizeTextEl.textContent = getMazeSizeLabel();
+      }
+
+      if (nextLevelBtn) {
+        nextLevelBtn.style.display = maze.won ? "inline-flex" : "none";
       }
 
       const msg = document.getElementById("mazeMessage");
