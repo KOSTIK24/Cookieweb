@@ -187,6 +187,16 @@
       grid-column: span 3;
     }
 
+    #nextLevelBtn {
+      display: none;
+    }
+
+    #attackButton.cooldown {
+      background: rgba(255,70,95,.92);
+      color: #fff;
+      box-shadow: 0 0 18px rgba(255,70,95,.45);
+    }
+
     .danger-text {
       color: #ffb4b4;
       font-weight: 800;
@@ -195,10 +205,6 @@
     .success-text {
       color: #baffc9;
       font-weight: 800;
-    }
-
-    #nextLevelBtn {
-      display: none;
     }
 
     @media (max-width: 850px) {
@@ -287,7 +293,7 @@
       <h2>Bludiště: Cookie vs SBP 🗝️⚔️</h2>
       <p class="hint">
         Ovládání: <b>WASD</b> nebo <b>šipky</b>. Útok mečem: <b>mezerník</b> nebo <b>E</b>.
-        Každý win přidá další level. Prohra resetne bludiště zpět na základ.
+        Cooldown meče je 0,5 sekundy. Každý level přidá klíč a SBP.
       </p>
 
       <div class="maze-layout">
@@ -301,12 +307,12 @@
             <button class="btn" onclick="movePlayer(0, -1)">⬆️</button>
             <span></span>
             <button class="btn" onclick="movePlayer(-1, 0)">⬅️</button>
-            <button class="btn primary" onclick="attack()">⚔️</button>
+            <button class="btn primary" id="attackButton" onclick="attack()">⚔️</button>
             <button class="btn" onclick="movePlayer(1, 0)">➡️</button>
             <span></span>
             <button class="btn" onclick="movePlayer(0, 1)">⬇️</button>
             <span></span>
-            <button class="btn wide" onclick="restartMaze()">Restart bludiště</button>
+            <button class="btn wide" onclick="restartMaze()">Restart levelu</button>
           </div>
         </div>
 
@@ -318,6 +324,7 @@
           <p>Level: <b id="mazeLevel">1</b></p>
           <p>Výhry v sérii: <b id="mazeWins">0</b></p>
           <p>Velikost mapy: <b id="mazeSizeText">16x16</b></p>
+          <p>Meč: <b id="swordStatus">Připraven</b></p>
           <p id="mazeMessage" class="hint">Najdi klíče a dávej bacha na SBP.</p>
 
           <div class="controls">
@@ -851,13 +858,13 @@
 
     const canvas = document.getElementById("mazeCanvas");
     const ctx = canvas.getContext("2d");
+
     let tileSize = 40;
+    let mazeMap = [];
 
     const cookieImg = new Image();
     cookieImg.src = COOKIE_IMAGE_PATH;
     cookieImg.onload = () => drawMaze();
-
-    let mazeMap = [];
 
     const MAZE_BASE_SIZE = 16;
     const MAZE_MIN_SIZE = 16;
@@ -865,6 +872,8 @@
 
     const BASE_KEY_COUNT = 4;
     const BASE_ENEMY_COUNT = 3;
+
+    const ATTACK_COOLDOWN_MS = 500;
 
     let mazeProgress = loadMazeProgress();
     let mazeSize = mazeProgress.size;
@@ -900,18 +909,12 @@
     function resetMazeProgress() {
       if (!confirm("Fakt resetovat progres bludiště?")) return;
 
-      mazeProgress = {
-        wins: 0,
-        size: MAZE_BASE_SIZE
-      };
-
-      mazeSize = mazeProgress.size;
-      saveMazeProgress();
+      resetMazeProgressToBase();
       restartMaze();
       showToast("Progres bludiště resetován na základ.");
     }
 
-    function resetMazeProgressAfterDeath() {
+    function resetMazeProgressToBase() {
       mazeProgress = {
         wins: 0,
         size: MAZE_BASE_SIZE
@@ -961,6 +964,32 @@
       return current;
     }
 
+    function isAttackOnCooldown() {
+      return Date.now() - lastAttack < ATTACK_COOLDOWN_MS;
+    }
+
+    function getAttackCooldownLeft() {
+      return Math.max(0, ATTACK_COOLDOWN_MS - (Date.now() - lastAttack));
+    }
+
+    function updateAttackCooldownUI() {
+      const attackButton = document.getElementById("attackButton");
+      const swordStatus = document.getElementById("swordStatus");
+
+      const cooldown = isAttackOnCooldown();
+      const left = getAttackCooldownLeft();
+
+      if (attackButton) {
+        attackButton.classList.toggle("cooldown", cooldown);
+        attackButton.textContent = cooldown ? "🟥" : "⚔️";
+      }
+
+      if (swordStatus) {
+        swordStatus.textContent = cooldown ? `Cooldown ${Math.ceil(left / 100) / 10}s` : "Připraven";
+        swordStatus.style.color = cooldown ? "#ff6b7a" : "";
+      }
+    }
+
     function recordMazeWin() {
       if (!maze || maze.winProgressApplied) return;
 
@@ -982,7 +1011,7 @@
       if (!maze || maze.lossProgressApplied) return;
 
       maze.lossProgressApplied = true;
-      resetMazeProgressAfterDeath();
+      resetMazeProgressToBase();
 
       showToast("Prohra. Bludiště se resetovalo na základ: 16x16, 4 klíče, 3 SBP.");
     }
@@ -1019,6 +1048,23 @@
 
         return grid[ny][nx] !== "#";
       }).length;
+    }
+
+    function carveGuaranteedPath(grid, start, exit) {
+      let x = start.x;
+      let y = start.y;
+
+      grid[y][x] = ".";
+
+      while (x !== exit.x) {
+        x += x < exit.x ? 1 : -1;
+        grid[y][x] = ".";
+      }
+
+      while (y !== exit.y) {
+        y += y < exit.y ? 1 : -1;
+        grid[y][x] = ".";
+      }
     }
 
     function generateMazeMap() {
@@ -1075,11 +1121,13 @@
       }
 
       grid[exit.y][exit.x] = ".";
-      grid[exit.y - 1][exit.x] = ".";
-      grid[exit.y][exit.x - 1] = ".";
-      grid[exit.y - 1][exit.x - 1] = ".";
+      grid[Math.max(1, exit.y - 1)][exit.x] = ".";
+      grid[exit.y][Math.max(1, exit.x - 1)] = ".";
+      grid[Math.max(1, exit.y - 1)][Math.max(1, exit.x - 1)] = ".";
 
-      const extraOpenings = Math.floor(mazeSize * 1.5);
+      carveGuaranteedPath(grid, start, exit);
+
+      const extraOpenings = Math.floor(mazeSize * 1.6);
 
       for (let i = 0; i < extraOpenings; i++) {
         const x = Math.floor(Math.random() * (mazeSize - 2)) + 1;
@@ -1343,9 +1391,14 @@
 
       const now = Date.now();
 
-      if (now - lastAttack < 350) return;
+      if (now - lastAttack < ATTACK_COOLDOWN_MS) {
+        updateAttackCooldownUI();
+        drawMaze();
+        return;
+      }
 
       lastAttack = now;
+      updateAttackCooldownUI();
 
       const tx = maze.player.x + maze.player.dirX;
       const ty = maze.player.y + maze.player.dirY;
@@ -1473,6 +1526,8 @@
       if (nextLevelBtn) {
         nextLevelBtn.style.display = maze.won ? "inline-flex" : "none";
       }
+
+      updateAttackCooldownUI();
 
       const msg = document.getElementById("mazeMessage");
       msg.textContent = maze.message;
@@ -1605,8 +1660,9 @@
 
       const cx = px + tileSize / 2;
       const cy = py + tileSize / 2;
+      const cooldown = isAttackOnCooldown();
 
-      ctx.strokeStyle = "rgba(255,255,255,.75)";
+      ctx.strokeStyle = cooldown ? "rgba(255,60,80,.95)" : "rgba(255,255,255,.75)";
       ctx.lineWidth = Math.max(2, tileSize * .07);
       ctx.beginPath();
       ctx.moveTo(cx, cy);
@@ -1619,13 +1675,14 @@
 
       const px = swordFlash.x * tileSize;
       const py = swordFlash.y * tileSize;
+      const cooldown = isAttackOnCooldown();
 
-      ctx.fillStyle = "rgba(255,255,255,.25)";
+      ctx.fillStyle = cooldown ? "rgba(255,60,80,.35)" : "rgba(255,255,255,.25)";
       ctx.fillRect(px + tileSize * .1, py + tileSize * .1, tileSize * .8, tileSize * .8);
       ctx.font = `${Math.max(14, tileSize * .6)}px Arial`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("⚔️", px + tileSize / 2, py + tileSize / 2);
+      ctx.fillText(cooldown ? "🟥" : "⚔️", px + tileSize / 2, py + tileSize / 2);
     }
 
     document.addEventListener("keydown", event => {
@@ -1644,6 +1701,7 @@
 
     setInterval(() => {
       moveEnemies();
+      updateAttackCooldownUI();
       drawMaze();
     }, 120);
 
