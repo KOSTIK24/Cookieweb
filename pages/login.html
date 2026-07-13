@@ -57,6 +57,44 @@
       line-height: 1.45;
     }
 
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      margin: 12px 0;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+      content: "";
+      height: 1px;
+      flex: 1;
+      background: rgba(255,255,255,.12);
+    }
+
+    .google-btn {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.94);
+      color: #1f1f1f;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .12s ease, filter .12s ease;
+    }
+
+    .google-btn:hover {
+      filter: brightness(1.04);
+      transform: translateY(-1px);
+    }
+
+    .google-btn:active {
+      transform: translateY(1px) scale(.99);
+    }
+
     @media (max-width: 850px) {
       .auth-grid {
         grid-template-columns: 1fr;
@@ -98,12 +136,17 @@
           <h2>Přihlášení</h2>
 
           <div class="form-stack">
+            <button class="google-btn" onclick="loginWithGoogle()">🔵 Přihlásit přes Google</button>
+
+            <div class="auth-divider">nebo email</div>
+
             <input id="loginEmail" type="email" placeholder="Email">
             <input id="loginPassword" type="password" placeholder="Heslo">
             <button class="btn primary" onclick="login()">Přihlásit</button>
           </div>
 
           <p class="mini-info">
+            Google login funguje jen když je Google provider zapnutý v Supabase.
             Když to píše wrong credentials, účet buď není potvrzený, nebo je špatné heslo.
           </p>
         </div>
@@ -176,8 +219,16 @@
         const profile = await window.SUSENKA.getCurrentProfile();
         const isAdmin = await window.SUSENKA.isCurrentUserAdmin();
 
+        const displayName =
+          profile?.username ||
+          user.user_metadata?.username ||
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          user.email ||
+          "uživatel";
+
         currentUserInfo.innerHTML = `
-          Přihlášen jako <b>${window.SUSENKA.escapeHTML(profile?.username || user.email)}</b>
+          Přihlášen jako <b>${window.SUSENKA.escapeHTML(displayName)}</b>
           ${profile?.role ? ` | Role: <b>${window.SUSENKA.escapeHTML(profile.role)}</b>` : ""}
           ${isAdmin ? " | 👑 Admin" : ""}
         `;
@@ -186,6 +237,41 @@
       } catch (error) {
         console.error("USER INFO ERROR:", error);
         setCurrentUserInfo("Kontrola přihlášení spadla: " + error.message, true);
+      }
+    }
+
+    async function loginWithGoogle() {
+      try {
+        if (!db) {
+          return setStatus("Databáze není nastavená.", true);
+        }
+
+        const redirectUrl = getRegisterRedirectUrl();
+
+        console.log("GOOGLE LOGIN REDIRECT:", redirectUrl);
+
+        const { data, error } = await db.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: redirectUrl,
+            queryParams: {
+              access_type: "offline",
+              prompt: "select_account"
+            }
+          }
+        });
+
+        console.log("GOOGLE LOGIN DATA:", data);
+        console.log("GOOGLE LOGIN ERROR:", error);
+
+        if (error) {
+          return setStatus("Google login chyba: " + error.message, true);
+        }
+
+        setStatus("Přesměrovávám na Google...");
+      } catch (error) {
+        console.error("GOOGLE LOGIN CRASH:", error);
+        setStatus("JS chyba Google loginu: " + error.message, true);
       }
     }
 
